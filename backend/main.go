@@ -441,8 +441,16 @@ func main() {
 	})
 
 	// Get detailed vulnerability list for a specific scan
-	r.Get("/api/scans/{filename}", func(w http.ResponseWriter, r *http.Request) {
-		filename := chi.URLParam(r, "filename")
+	// Use wildcard pattern to support subdirectories: /api/scans/*
+	r.Get("/api/scans/*", func(w http.ResponseWriter, r *http.Request) {
+		// Get the path after /api/scans/
+		path := r.URL.Path
+		prefix := "/api/scans/"
+		if !strings.HasPrefix(path, prefix) {
+			http.Error(w, "invalid path", http.StatusBadRequest)
+			return
+		}
+		filename := strings.TrimPrefix(path, prefix)
 		if filename == "" {
 			http.Error(w, "filename is required", http.StatusBadRequest)
 			return

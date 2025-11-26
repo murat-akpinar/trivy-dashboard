@@ -158,7 +158,15 @@ function App() {
       if (imageVulnDetails[identifier] || loadingImageDetails[identifier]) return;
 
       setLoadingImageDetails((prev) => ({ ...prev, [identifier]: true }));
-      fetch(`${API_BASE}/api/scans/${identifier}`)
+      
+      // URL encode the path to handle subdirectories (e.g., "trivy-dashboard/backend.json")
+      // Split by / and encode each segment, then join back
+      const encodedPath = identifier
+        .split('/')
+        .map(segment => encodeURIComponent(segment))
+        .join('/');
+      
+      fetch(`${API_BASE}/api/scans/${encodedPath}`)
         .then(async (res) => {
           if (!res.ok) {
             throw new Error(`API error: ${res.status}`);
