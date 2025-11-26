@@ -7,14 +7,14 @@ services:
     env_file:
       - .env
     ports:
-      - "${BACKEND_PORT:-8180}:8080"
+      - "127.0.0.1:${BACKEND_PORT:-8180}:8080"
     environment:
       - TZ=${TZ:-Europe/Istanbul}
       - PORT=8080
       - EXPORT_DIR=/app/export
     volumes:
       # Trivy JSON raporlarının geleceği klasör
-      - ${EXPORT_DIR:-./export}:/app/export:ro
+      - trivy-dashboard-export:/app/export:ro
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8080/health || exit 1"]
       interval: 30s
@@ -47,6 +47,13 @@ services:
       start_period: 20s
     restart: unless-stopped
 
-volumes: {}
+volumes:
+  trivy-dashboard-export:
+    name: trivy-dashboard-export
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${EXPORT_DIR:-./export}
 
 
