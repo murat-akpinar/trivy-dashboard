@@ -19,7 +19,7 @@ WORKDIR /app
 # Update Alpine packages and install security updates (aggressive update)
 RUN apk update && \
     apk upgrade --no-cache && \
-    apk add --no-cache ca-certificates tzdata && \
+    apk add --no-cache ca-certificates tzdata wget && \
     apk fix --no-cache && \
     rm -rf /var/cache/apk/* /tmp/* /var/tmp/*
 

@@ -60,6 +60,26 @@ docker compose up -d --build
 - Frontend: http://localhost:3000 (veya `.env` dosyasındaki `FRONTEND_PORT`)
 - Backend API: http://localhost:8180 (veya `.env` dosyasındaki `BACKEND_PORT`)
 
+### Health Check ve Otomatik Restart
+
+Docker Compose, her servis için health check yapılandırması içerir:
+- **Backend**: `/health` endpoint'ini kontrol eder (30 saniyede bir)
+- **Frontend**: Nginx'in ana sayfasını kontrol eder (30 saniyede bir)
+- **Restart Policy**: `unless-stopped` - Container çökerse otomatik restart yapar
+- **Dependencies**: Frontend, backend'in sağlıklı olmasını bekler (`depends_on`)
+
+Health check başarısız olursa ve container çökerse, Docker otomatik olarak container'ı yeniden başlatır.
+
+**Health Check Durumunu Kontrol Etme:**
+```bash
+# Container durumlarını görüntüle
+docker compose ps
+
+# Health check loglarını görüntüle
+docker inspect trivy-dashboard-backend | grep -A 10 Health
+docker inspect trivy-dashboard-frontend | grep -A 10 Health
+```
+
 ---
 
 ## Environment Variables

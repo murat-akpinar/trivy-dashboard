@@ -18,7 +18,7 @@ RUN npm run build
 FROM nginx:alpine AS runtime
 
 # Update Alpine packages and install security updates
-RUN apk update && apk upgrade && apk add --no-cache ca-certificates && \
+RUN apk update && apk upgrade && apk add --no-cache ca-certificates wget && \
     rm -rf /var/cache/apk/*
 
 COPY --from=build /app/dist /usr/share/nginx/html
