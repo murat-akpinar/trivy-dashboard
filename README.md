@@ -4,7 +4,7 @@ Trivy güvenlik tarama sonuçlarını toplayıp görselleştiren bir web dashboa
 
 
 ![Dashboard](/images/dashboard.png)
-![Project](/images/project.jpg)
+![Project](/images/project.png)
 ---
 
 ## Özellikler
@@ -66,10 +66,6 @@ docker compose up -d --build
 
 Projeyi özelleştirmek için `.env` dosyası oluşturabilirsiniz:
 
-```bash
-cp .example.env .env
-```
-
 ### Mevcut Değişkenler
 
 - `BACKEND_PORT`: Backend'in host'ta dinleyeceği port (varsayılan: 8180)
@@ -77,8 +73,6 @@ cp .example.env .env
 - `EXPORT_DIR`: Trivy JSON raporlarının bulunduğu klasör (varsayılan: ./export)
 - `VITE_API_BASE`: Frontend'in backend API'sine erişmek için kullanacağı URL (varsayılan: http://localhost:8180)
 - `TZ`: Timezone (varsayılan: Europe/Istanbul)
-
-**Not**: `.env` dosyası Git'e eklenmez (`.gitignore`'da). `.example.env` dosyası template olarak kullanılır.
 
 ---
 
@@ -171,26 +165,44 @@ scp /tmp/backend-${TIMESTAMP}.json user@dashboard-host:/path/to/trivy-dashboard/
 ./scan-frontend.sh
 ```
 
-**Manuel Tarama (Zaman Damgası ile):**
+**Manuel Tarama (Zaman Damgası ile - Dizin Yapısı):**
 ```bash
 # Zaman damgası oluştur
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 
-# Backend image'ini tara
+# Backend image'ini tara (dizin yapısı: export/trivy-dashboard/backend-YYYYMMDD-HHMMSS.json)
 docker run --rm \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v $(pwd)/export:/output \
   aquasec/trivy:latest image \
-  --format json -o /output/trivy-dashboard-backend-${TIMESTAMP}.json \
+  --format json -o /output/trivy-dashboard/backend-${TIMESTAMP}.json \
   trivy-dashboard-backend:latest
 
-# Frontend image'ini tara
+# Frontend image'ini tara (dizin yapısı: export/trivy-dashboard/frontend-YYYYMMDD-HHMMSS.json)
 docker run --rm \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v $(pwd)/export:/output \
   aquasec/trivy:latest image \
-  --format json -o /output/trivy-dashboard-frontend-${TIMESTAMP}.json \
+  --format json -o /output/trivy-dashboard/frontend-${TIMESTAMP}.json \
   trivy-dashboard-frontend:latest
+```
+
+**Örnek Tarama:**
+```bash
+# Backend için örnek tarama komutu
+# Bu komut zaman damgası ile yeni bir tarama oluşturur ve önceki taramaları korur
+
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+
+docker run --rm \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v /home/shyuuhei/GIT/trivy-dashboard/export:/output \
+  aquasec/trivy:latest image \
+  --format json -o /output/trivy-dashboard/backend-${TIMESTAMP}.json \
+  trivy-dashboard-backend:latest
+
+# Sonuç: export/trivy-dashboard/backend-20251126-224009.json gibi bir dosya oluşur
+# Dashboard'da bu yeni tarama otomatik olarak görüntülenir
 ```
 
 **Basit Tarama (Tek dosya, üzerine yazar - Önerilmez):**
@@ -200,7 +212,7 @@ docker run --rm \
   -v /var/run/docker.sock:/var/run/docker.sock \
   -v $(pwd)/export:/output \
   aquasec/trivy:latest image \
-  --format json -o /output/trivy-dashboard-backend.json \
+  --format json -o /output/trivy-dashboard/backend.json \
   trivy-dashboard-backend:latest
 ```
 

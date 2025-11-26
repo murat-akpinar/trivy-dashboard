@@ -1,62 +1,62 @@
 {
   "SchemaVersion": 2,
-  "CreatedAt": "2025-11-26T17:44:29.657479277Z",
+  "CreatedAt": "2025-11-26T19:42:22.096357874Z",
   "ArtifactName": "trivy-dashboard-backend:latest",
   "ArtifactType": "container_image",
   "Metadata": {
-    "Size": 18924032,
+    "Size": 20001280,
     "OS": {
       "Family": "alpine",
-      "Name": "3.21.5"
+      "Name": "3.22.2"
     },
-    "ImageID": "sha256:2e3ae3e59353f116662913b75bca92eebe9ed7cc264c293dd98478c9c8f7acfc",
+    "ImageID": "sha256:2860968f28e3f47492b58314ce0f8d5a1d6a7b0a05ed6d3b884d7df149e01471",
     "DiffIDs": [
-      "sha256:922ec217407c0fd31cb18b46090bf62e439fb53ecd01f09406d62e25a906e09b",
-      "sha256:21ca14705b4c8778497f8467bb1abb1c182686a82df5d523964f551ab8269df9",
-      "sha256:44747efee49aadd5e1b1e6d042e1ac7325d30c0c59e7572aa81210c8115256b6",
-      "sha256:f86af381f0d75c7ede0313902b1dd2d406d7fa18ba7af59fa45e447aa7c1f24d"
+      "sha256:256f393e029fa2063d8c93720da36a74a032bed3355a2bc3e313ad12f8bde9d1",
+      "sha256:d65385e1e383e8e6ceec51e6a8a853b5fed54007b343d3143b9dc9a6f25f275d",
+      "sha256:634da68794ef8339c6328556162b3acd9f38d3dd65ad5350bfa35152d0b80072",
+      "sha256:4aa1bce4d145f58ceae52a50a298dfd0ca74c329471c20b51b8dadb2d57c5db9"
     ],
     "RepoTags": [
       "trivy-dashboard-backend:latest"
     ],
     "ImageConfig": {
       "architecture": "amd64",
-      "created": "2025-11-26T20:41:24.725415266+03:00",
+      "created": "2025-11-26T22:06:54.386801245+03:00",
       "history": [
         {
-          "created": "2025-10-08T11:06:42Z",
-          "created_by": "ADD alpine-minirootfs-3.21.5-x86_64.tar.gz / # buildkit",
+          "created": "2025-10-08T11:04:56Z",
+          "created_by": "ADD alpine-minirootfs-3.22.2-x86_64.tar.gz / # buildkit",
           "comment": "buildkit.dockerfile.v0"
         },
         {
-          "created": "2025-10-08T11:06:42Z",
+          "created": "2025-10-08T11:04:56Z",
           "created_by": "CMD [\"/bin/sh\"]",
           "comment": "buildkit.dockerfile.v0",
           "empty_layer": true
         },
         {
-          "created": "2025-11-26T17:41:02Z",
+          "created": "2025-11-26T17:52:11Z",
           "created_by": "WORKDIR /app",
           "comment": "buildkit.dockerfile.v0"
         },
         {
-          "created": "2025-11-26T17:41:14Z",
-          "created_by": "RUN /bin/sh -c apk update \u0026\u0026 apk upgrade \u0026\u0026 apk add --no-cache ca-certificates tzdata \u0026\u0026     rm -rf /var/cache/apk/* # buildkit",
+          "created": "2025-11-26T18:19:31Z",
+          "created_by": "RUN /bin/sh -c apk update \u0026\u0026     apk upgrade --no-cache \u0026\u0026     apk add --no-cache ca-certificates tzdata \u0026\u0026     apk fix --no-cache \u0026\u0026     rm -rf /var/cache/apk/* /tmp/* /var/tmp/* # buildkit",
           "comment": "buildkit.dockerfile.v0"
         },
         {
-          "created": "2025-11-26T17:41:24Z",
+          "created": "2025-11-26T19:06:54Z",
           "created_by": "COPY /trivy-dashboard-backend /usr/local/bin/trivy-dashboard-backend # buildkit",
           "comment": "buildkit.dockerfile.v0"
         },
         {
-          "created": "2025-11-26T17:41:24Z",
+          "created": "2025-11-26T19:06:54Z",
           "created_by": "EXPOSE [8080/tcp]",
           "comment": "buildkit.dockerfile.v0",
           "empty_layer": true
         },
         {
-          "created": "2025-11-26T17:41:24Z",
+          "created": "2025-11-26T19:06:54Z",
           "created_by": "CMD [\"trivy-dashboard-backend\"]",
           "comment": "buildkit.dockerfile.v0",
           "empty_layer": true
@@ -66,10 +66,10 @@
       "rootfs": {
         "type": "layers",
         "diff_ids": [
-          "sha256:922ec217407c0fd31cb18b46090bf62e439fb53ecd01f09406d62e25a906e09b",
-          "sha256:21ca14705b4c8778497f8467bb1abb1c182686a82df5d523964f551ab8269df9",
-          "sha256:44747efee49aadd5e1b1e6d042e1ac7325d30c0c59e7572aa81210c8115256b6",
-          "sha256:f86af381f0d75c7ede0313902b1dd2d406d7fa18ba7af59fa45e447aa7c1f24d"
+          "sha256:256f393e029fa2063d8c93720da36a74a032bed3355a2bc3e313ad12f8bde9d1",
+          "sha256:d65385e1e383e8e6ceec51e6a8a853b5fed54007b343d3143b9dc9a6f25f275d",
+          "sha256:634da68794ef8339c6328556162b3acd9f38d3dd65ad5350bfa35152d0b80072",
+          "sha256:4aa1bce4d145f58ceae52a50a298dfd0ca74c329471c20b51b8dadb2d57c5db9"
         ]
       },
       "config": {
@@ -93,59 +93,58 @@
     },
     "Layers": [
       {
-        "Size": 8117760,
-        "DiffID": "sha256:922ec217407c0fd31cb18b46090bf62e439fb53ecd01f09406d62e25a906e09b"
+        "Size": 8607232,
+        "DiffID": "sha256:256f393e029fa2063d8c93720da36a74a032bed3355a2bc3e313ad12f8bde9d1"
       },
       {
         "Size": 1536,
-        "DiffID": "sha256:21ca14705b4c8778497f8467bb1abb1c182686a82df5d523964f551ab8269df9"
+        "DiffID": "sha256:d65385e1e383e8e6ceec51e6a8a853b5fed54007b343d3143b9dc9a6f25f275d"
       },
       {
         "Size": 2526720,
-        "DiffID": "sha256:44747efee49aadd5e1b1e6d042e1ac7325d30c0c59e7572aa81210c8115256b6"
+        "DiffID": "sha256:634da68794ef8339c6328556162b3acd9f38d3dd65ad5350bfa35152d0b80072"
       },
       {
-        "Size": 8278016,
-        "DiffID": "sha256:f86af381f0d75c7ede0313902b1dd2d406d7fa18ba7af59fa45e447aa7c1f24d"
+        "Size": 8865792,
+        "DiffID": "sha256:4aa1bce4d145f58ceae52a50a298dfd0ca74c329471c20b51b8dadb2d57c5db9"
       }
     ]
   },
   "Results": [
     {
-      "Target": "trivy-dashboard-backend:latest (alpine 3.21.5)",
+      "Target": "trivy-dashboard-backend:latest (alpine 3.22.2)",
       "Class": "os-pkgs",
       "Type": "alpine",
       "Packages": [
         {
-          "ID": "alpine-baselayout@3.6.8-r1",
+          "ID": "alpine-baselayout@3.7.0-r0",
           "Name": "alpine-baselayout",
           "Identifier": {
-            "PURL": "pkg:apk/alpine/alpine-baselayout@3.6.8-r1?arch=x86_64\u0026distro=3.21.5",
-            "UID": "228b0cdf148329e3"
+            "PURL": "pkg:apk/alpine/alpine-baselayout@3.7.0-r0?arch=x86_64\u0026distro=3.22.2",
+            "UID": "8138944c3c804f0d"
           },
-          "Version": "3.6.8-r1",
+          "Version": "3.7.0-r0",
           "Arch": "x86_64",
           "SrcName": "alpine-baselayout",
-          "SrcVersion": "3.6.8-r1",
+          "SrcVersion": "3.7.0-r0",
           "Licenses": [
             "GPL-2.0-only"
           ],
           "Maintainer": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
           "DependsOn": [
-            "alpine-baselayout-data@3.6.8-r1",
-            "busybox-binsh@1.37.0-r14"
+            "alpine-baselayout-data@3.7.0-r0",
+            "busybox-binsh@1.37.0-r20"
           ],
           "Layer": {
-            "DiffID": "sha256:922ec217407c0fd31cb18b46090bf62e439fb53ecd01f09406d62e25a906e09b"
+            "DiffID": "sha256:256f393e029fa2063d8c93720da36a74a032bed3355a2bc3e313ad12f8bde9d1"
           },
-          "Digest": "sha1:eceb5e3555e7f7f8925dc248d557fcc744d573d6",
+          "Digest": "sha1:29f99748eea1ffe01f70b34024dc45c46d211f8d",
           "InstalledFiles": [
             "etc/motd",
             "etc/crontabs/root",
             "etc/modprobe.d/aliases.conf",
             "etc/modprobe.d/blacklist.conf",
             "etc/modprobe.d/i386.conf",
-            "etc/modprobe.d/kms.conf",
             "etc/profile.d/20locale.sh",
             "etc/profile.d/README",
             "etc/profile.d/color_prompt.sh.disabled",
@@ -157,24 +156,24 @@
           ]
         },
         {
-          "ID": "alpine-baselayout-data@3.6.8-r1",
+          "ID": "alpine-baselayout-data@3.7.0-r0",
           "Name": "alpine-baselayout-data",
           "Identifier": {
-            "PURL": "pkg:apk/alpine/alpine-baselayout-data@3.6.8-r1?arch=x86_64\u0026distro=3.21.5",
-            "UID": "8b1d1e6b51184272"
+            "PURL": "pkg:apk/alpine/alpine-baselayout-data@3.7.0-r0?arch=x86_64\u0026distro=3.22.2",
+            "UID": "f5b86fea926440c2"
           },
-          "Version": "3.6.8-r1",
+          "Version": "3.7.0-r0",
           "Arch": "x86_64",
           "SrcName": "alpine-baselayout",
-          "SrcVersion": "3.6.8-r1",
+          "SrcVersion": "3.7.0-r0",
           "Licenses": [
             "GPL-2.0-only"
           ],
           "Maintainer": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
           "Layer": {
-            "DiffID": "sha256:922ec217407c0fd31cb18b46090bf62e439fb53ecd01f09406d62e25a906e09b"
+            "DiffID": "sha256:256f393e029fa2063d8c93720da36a74a032bed3355a2bc3e313ad12f8bde9d1"
           },
-          "Digest": "sha1:7979a835bc317cedb997d3a42f3b10be86a8d18a",
+          "Digest": "sha1:73f5ef65f8333a1784102df973c076d5a7d5b5fe",
           "InstalledFiles": [
             "etc/fstab",
             "etc/group",
@@ -197,8 +196,8 @@
           "ID": "alpine-keys@2.5-r0",
           "Name": "alpine-keys",
           "Identifier": {
-            "PURL": "pkg:apk/alpine/alpine-keys@2.5-r0?arch=x86_64\u0026distro=3.21.5",
-            "UID": "9af6504ee6ba05d8"
+            "PURL": "pkg:apk/alpine/alpine-keys@2.5-r0?arch=x86_64\u0026distro=3.22.2",
+            "UID": "81813228b0ffdc30"
           },
           "Version": "2.5-r0",
           "Arch": "x86_64",
@@ -209,9 +208,9 @@
           ],
           "Maintainer": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
           "Layer": {
-            "DiffID": "sha256:922ec217407c0fd31cb18b46090bf62e439fb53ecd01f09406d62e25a906e09b"
+            "DiffID": "sha256:256f393e029fa2063d8c93720da36a74a032bed3355a2bc3e313ad12f8bde9d1"
           },
-          "Digest": "sha1:91014bfdba0e7f7b4505159466e9f19871606a59",
+          "Digest": "sha1:b175e48144ebad03d6ba11d45b25aafc2de310c1",
           "InstalledFiles": [
             "etc/apk/keys/alpine-devel@lists.alpinelinux.org-4a6a0840.rsa.pub",
             "etc/apk/keys/alpine-devel@lists.alpinelinux.org-5243ef4b.rsa.pub",
@@ -259,16 +258,16 @@
           ]
         },
         {
-          "ID": "alpine-release@3.21.5-r0",
+          "ID": "alpine-release@3.22.2-r0",
           "Name": "alpine-release",
           "Identifier": {
-            "PURL": "pkg:apk/alpine/alpine-release@3.21.5-r0?arch=x86_64\u0026distro=3.21.5",
-            "UID": "d24038ea13e6de70"
+            "PURL": "pkg:apk/alpine/alpine-release@3.22.2-r0?arch=x86_64\u0026distro=3.22.2",
+            "UID": "7d4257c820bacdf2"
           },
-          "Version": "3.21.5-r0",
+          "Version": "3.22.2-r0",
           "Arch": "x86_64",
           "SrcName": "alpine-base",
-          "SrcVersion": "3.21.5-r0",
+          "SrcVersion": "3.22.2-r0",
           "Licenses": [
             "MIT"
           ],
@@ -277,9 +276,9 @@
             "alpine-keys@2.5-r0"
           ],
           "Layer": {
-            "DiffID": "sha256:922ec217407c0fd31cb18b46090bf62e439fb53ecd01f09406d62e25a906e09b"
+            "DiffID": "sha256:256f393e029fa2063d8c93720da36a74a032bed3355a2bc3e313ad12f8bde9d1"
           },
-          "Digest": "sha1:17fc4cd975359564a4cedfc75de2bbc1c121d0fa",
+          "Digest": "sha1:1a214b8ece57fc0cfa65a1576b24cf30015d3acd",
           "InstalledFiles": [
             "etc/alpine-release",
             "etc/issue",
@@ -289,58 +288,57 @@
           ]
         },
         {
-          "ID": "apk-tools@2.14.6-r3",
+          "ID": "apk-tools@2.14.9-r3",
           "Name": "apk-tools",
           "Identifier": {
-            "PURL": "pkg:apk/alpine/apk-tools@2.14.6-r3?arch=x86_64\u0026distro=3.21.5",
-            "UID": "df175aebbf9e4574"
+            "PURL": "pkg:apk/alpine/apk-tools@2.14.9-r3?arch=x86_64\u0026distro=3.22.2",
+            "UID": "f0b893fe434d9e67"
           },
-          "Version": "2.14.6-r3",
+          "Version": "2.14.9-r3",
           "Arch": "x86_64",
           "SrcName": "apk-tools",
-          "SrcVersion": "2.14.6-r3",
+          "SrcVersion": "2.14.9-r3",
           "Licenses": [
             "GPL-2.0-only"
           ],
           "Maintainer": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
           "DependsOn": [
             "ca-certificates-bundle@20250911-r0",
-            "libcrypto3@3.3.5-r0",
-            "libssl3@3.3.5-r0",
-            "musl@1.2.5-r9",
+            "libapk2@2.14.9-r3",
+            "libcrypto3@3.5.4-r0",
+            "musl@1.2.5-r10",
             "zlib@1.3.1-r2"
           ],
           "Layer": {
-            "DiffID": "sha256:922ec217407c0fd31cb18b46090bf62e439fb53ecd01f09406d62e25a906e09b"
+            "DiffID": "sha256:256f393e029fa2063d8c93720da36a74a032bed3355a2bc3e313ad12f8bde9d1"
           },
-          "Digest": "sha1:9704358d1b44fa771e0a0a3a527d8a26830e3eba",
+          "Digest": "sha1:992f5e39b0d45f326c9ed2e9b1fe737809c23ed9",
           "InstalledFiles": [
-            "sbin/apk",
-            "usr/lib/libapk.so.2.14.0"
+            "sbin/apk"
           ]
         },
         {
-          "ID": "busybox@1.37.0-r14",
+          "ID": "busybox@1.37.0-r20",
           "Name": "busybox",
           "Identifier": {
-            "PURL": "pkg:apk/alpine/busybox@1.37.0-r14?arch=x86_64\u0026distro=3.21.5",
-            "UID": "175276c879ddf378"
+            "PURL": "pkg:apk/alpine/busybox@1.37.0-r20?arch=x86_64\u0026distro=3.22.2",
+            "UID": "4c1e95c171e1f07b"
           },
-          "Version": "1.37.0-r14",
+          "Version": "1.37.0-r20",
           "Arch": "x86_64",
           "SrcName": "busybox",
-          "SrcVersion": "1.37.0-r14",
+          "SrcVersion": "1.37.0-r20",
           "Licenses": [
             "GPL-2.0-only"
           ],
           "Maintainer": "Sören Tempel \u003csoeren+alpine@soeren-tempel.net\u003e",
           "DependsOn": [
-            "musl@1.2.5-r9"
+            "musl@1.2.5-r10"
           ],
           "Layer": {
-            "DiffID": "sha256:44747efee49aadd5e1b1e6d042e1ac7325d30c0c59e7572aa81210c8115256b6"
+            "DiffID": "sha256:634da68794ef8339c6328556162b3acd9f38d3dd65ad5350bfa35152d0b80072"
           },
-          "Digest": "sha1:a7fc9d0c26eac3c681f2e03f339af312011e443e",
+          "Digest": "sha1:3e9d75288280b3c492e91f30e126c2400d1701b3",
           "InstalledFiles": [
             "bin/busybox",
             "etc/securetty",
@@ -352,27 +350,27 @@
           ]
         },
         {
-          "ID": "busybox-binsh@1.37.0-r14",
+          "ID": "busybox-binsh@1.37.0-r20",
           "Name": "busybox-binsh",
           "Identifier": {
-            "PURL": "pkg:apk/alpine/busybox-binsh@1.37.0-r14?arch=x86_64\u0026distro=3.21.5",
-            "UID": "c038f72df0e01023"
+            "PURL": "pkg:apk/alpine/busybox-binsh@1.37.0-r20?arch=x86_64\u0026distro=3.22.2",
+            "UID": "1688ce175c12917e"
           },
-          "Version": "1.37.0-r14",
+          "Version": "1.37.0-r20",
           "Arch": "x86_64",
           "SrcName": "busybox",
-          "SrcVersion": "1.37.0-r14",
+          "SrcVersion": "1.37.0-r20",
           "Licenses": [
             "GPL-2.0-only"
           ],
           "Maintainer": "Sören Tempel \u003csoeren+alpine@soeren-tempel.net\u003e",
           "DependsOn": [
-            "busybox@1.37.0-r14"
+            "busybox@1.37.0-r20"
           ],
           "Layer": {
-            "DiffID": "sha256:44747efee49aadd5e1b1e6d042e1ac7325d30c0c59e7572aa81210c8115256b6"
+            "DiffID": "sha256:634da68794ef8339c6328556162b3acd9f38d3dd65ad5350bfa35152d0b80072"
           },
-          "Digest": "sha1:e9b6cac12f5408585ae488f77ca6ca5d6aa6259d",
+          "Digest": "sha1:acd495b3054831a7a33137aa5a2ba6193a08a2d2",
           "InstalledFiles": [
             "bin/sh"
           ]
@@ -381,8 +379,8 @@
           "ID": "ca-certificates@20250911-r0",
           "Name": "ca-certificates",
           "Identifier": {
-            "PURL": "pkg:apk/alpine/ca-certificates@20250911-r0?arch=x86_64\u0026distro=3.21.5",
-            "UID": "309386656e21d5b3"
+            "PURL": "pkg:apk/alpine/ca-certificates@20250911-r0?arch=x86_64\u0026distro=3.22.2",
+            "UID": "c07d5d05c7e08e23"
           },
           "Version": "20250911-r0",
           "Arch": "x86_64",
@@ -394,14 +392,14 @@
           ],
           "Maintainer": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
           "DependsOn": [
-            "busybox-binsh@1.37.0-r14",
-            "libcrypto3@3.3.5-r0",
-            "musl@1.2.5-r9"
+            "busybox-binsh@1.37.0-r20",
+            "libcrypto3@3.5.4-r0",
+            "musl@1.2.5-r10"
           ],
           "Layer": {
-            "DiffID": "sha256:44747efee49aadd5e1b1e6d042e1ac7325d30c0c59e7572aa81210c8115256b6"
+            "DiffID": "sha256:634da68794ef8339c6328556162b3acd9f38d3dd65ad5350bfa35152d0b80072"
           },
-          "Digest": "sha1:cfc09a91ee9238553277ed988779162b9e45a457",
+          "Digest": "sha1:04905c8ed0de23926e7f151791fb17503e6ebf16",
           "InstalledFiles": [
             "etc/ca-certificates.conf",
             "etc/apk/protected_paths.d/ca-certificates.list",
@@ -560,8 +558,8 @@
           "ID": "ca-certificates-bundle@20250911-r0",
           "Name": "ca-certificates-bundle",
           "Identifier": {
-            "PURL": "pkg:apk/alpine/ca-certificates-bundle@20250911-r0?arch=x86_64\u0026distro=3.21.5",
-            "UID": "9f9dcfbd88de58c0"
+            "PURL": "pkg:apk/alpine/ca-certificates-bundle@20250911-r0?arch=x86_64\u0026distro=3.22.2",
+            "UID": "fea22b420974c6ba"
           },
           "Version": "20250911-r0",
           "Arch": "x86_64",
@@ -573,9 +571,9 @@
           ],
           "Maintainer": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
           "Layer": {
-            "DiffID": "sha256:922ec217407c0fd31cb18b46090bf62e439fb53ecd01f09406d62e25a906e09b"
+            "DiffID": "sha256:256f393e029fa2063d8c93720da36a74a032bed3355a2bc3e313ad12f8bde9d1"
           },
-          "Digest": "sha1:2c8ae30112c2bcd07e1a9d44f0ff64a7286cdabc",
+          "Digest": "sha1:8c7ee968419fcd92d5342cde0c5540a695a4ac2d",
           "InstalledFiles": [
             "etc/ssl/cert.pem",
             "etc/ssl/certs/ca-certificates.crt",
@@ -584,27 +582,57 @@
           ]
         },
         {
-          "ID": "libcrypto3@3.3.5-r0",
+          "ID": "libapk2@2.14.9-r3",
+          "Name": "libapk2",
+          "Identifier": {
+            "PURL": "pkg:apk/alpine/libapk2@2.14.9-r3?arch=x86_64\u0026distro=3.22.2",
+            "UID": "a92e20ce302d4d4d"
+          },
+          "Version": "2.14.9-r3",
+          "Arch": "x86_64",
+          "SrcName": "apk-tools",
+          "SrcVersion": "2.14.9-r3",
+          "Licenses": [
+            "GPL-2.0-only"
+          ],
+          "Maintainer": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
+          "DependsOn": [
+            "ca-certificates-bundle@20250911-r0",
+            "libcrypto3@3.5.4-r0",
+            "libssl3@3.5.4-r0",
+            "musl@1.2.5-r10",
+            "zlib@1.3.1-r2"
+          ],
+          "Layer": {
+            "DiffID": "sha256:256f393e029fa2063d8c93720da36a74a032bed3355a2bc3e313ad12f8bde9d1"
+          },
+          "Digest": "sha1:902fd71646d6e087e472c67b0f634c043a2195bc",
+          "InstalledFiles": [
+            "usr/lib/libapk.so.2.14.9"
+          ]
+        },
+        {
+          "ID": "libcrypto3@3.5.4-r0",
           "Name": "libcrypto3",
           "Identifier": {
-            "PURL": "pkg:apk/alpine/libcrypto3@3.3.5-r0?arch=x86_64\u0026distro=3.21.5",
-            "UID": "d1e0d6759a1b044c"
+            "PURL": "pkg:apk/alpine/libcrypto3@3.5.4-r0?arch=x86_64\u0026distro=3.22.2",
+            "UID": "f58e56ef5c63f37f"
           },
-          "Version": "3.3.5-r0",
+          "Version": "3.5.4-r0",
           "Arch": "x86_64",
           "SrcName": "openssl",
-          "SrcVersion": "3.3.5-r0",
+          "SrcVersion": "3.5.4-r0",
           "Licenses": [
             "Apache-2.0"
           ],
           "Maintainer": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
           "DependsOn": [
-            "musl@1.2.5-r9"
+            "musl@1.2.5-r10"
           ],
           "Layer": {
-            "DiffID": "sha256:922ec217407c0fd31cb18b46090bf62e439fb53ecd01f09406d62e25a906e09b"
+            "DiffID": "sha256:256f393e029fa2063d8c93720da36a74a032bed3355a2bc3e313ad12f8bde9d1"
           },
-          "Digest": "sha1:58660d06cbe9b18680a8d6856f20d788b1732347",
+          "Digest": "sha1:814a132b631e919ef418475879e7bcec216a0a62",
           "InstalledFiles": [
             "etc/ssl/ct_log_list.cnf",
             "etc/ssl/ct_log_list.cnf.dist",
@@ -619,67 +647,67 @@
           ]
         },
         {
-          "ID": "libssl3@3.3.5-r0",
+          "ID": "libssl3@3.5.4-r0",
           "Name": "libssl3",
           "Identifier": {
-            "PURL": "pkg:apk/alpine/libssl3@3.3.5-r0?arch=x86_64\u0026distro=3.21.5",
-            "UID": "26486f4e01127fff"
+            "PURL": "pkg:apk/alpine/libssl3@3.5.4-r0?arch=x86_64\u0026distro=3.22.2",
+            "UID": "34d76910cb64da71"
           },
-          "Version": "3.3.5-r0",
+          "Version": "3.5.4-r0",
           "Arch": "x86_64",
           "SrcName": "openssl",
-          "SrcVersion": "3.3.5-r0",
+          "SrcVersion": "3.5.4-r0",
           "Licenses": [
             "Apache-2.0"
           ],
           "Maintainer": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
           "DependsOn": [
-            "libcrypto3@3.3.5-r0",
-            "musl@1.2.5-r9"
+            "libcrypto3@3.5.4-r0",
+            "musl@1.2.5-r10"
           ],
           "Layer": {
-            "DiffID": "sha256:922ec217407c0fd31cb18b46090bf62e439fb53ecd01f09406d62e25a906e09b"
+            "DiffID": "sha256:256f393e029fa2063d8c93720da36a74a032bed3355a2bc3e313ad12f8bde9d1"
           },
-          "Digest": "sha1:6d1b46956b699923dfc7b5217178bc44c090d14d",
+          "Digest": "sha1:f8c18645483723a9416218a52eba3d34c86858cf",
           "InstalledFiles": [
             "usr/lib/libssl.so.3"
           ]
         },
         {
-          "ID": "musl@1.2.5-r9",
+          "ID": "musl@1.2.5-r10",
           "Name": "musl",
           "Identifier": {
-            "PURL": "pkg:apk/alpine/musl@1.2.5-r9?arch=x86_64\u0026distro=3.21.5",
-            "UID": "d304ed094a6f35fb"
+            "PURL": "pkg:apk/alpine/musl@1.2.5-r10?arch=x86_64\u0026distro=3.22.2",
+            "UID": "df3a33abddfcb855"
           },
-          "Version": "1.2.5-r9",
+          "Version": "1.2.5-r10",
           "Arch": "x86_64",
           "SrcName": "musl",
-          "SrcVersion": "1.2.5-r9",
+          "SrcVersion": "1.2.5-r10",
           "Licenses": [
             "MIT"
           ],
           "Maintainer": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
           "Layer": {
-            "DiffID": "sha256:922ec217407c0fd31cb18b46090bf62e439fb53ecd01f09406d62e25a906e09b"
+            "DiffID": "sha256:256f393e029fa2063d8c93720da36a74a032bed3355a2bc3e313ad12f8bde9d1"
           },
-          "Digest": "sha1:fcbef23891ec04f81a28b98dbbb521e58218d2d8",
+          "Digest": "sha1:59283b61db830a0a0309c98f4db906a2d8fa342b",
           "InstalledFiles": [
             "lib/ld-musl-x86_64.so.1",
             "lib/libc.musl-x86_64.so.1"
           ]
         },
         {
-          "ID": "musl-utils@1.2.5-r9",
+          "ID": "musl-utils@1.2.5-r10",
           "Name": "musl-utils",
           "Identifier": {
-            "PURL": "pkg:apk/alpine/musl-utils@1.2.5-r9?arch=x86_64\u0026distro=3.21.5",
-            "UID": "3e65cfca4f8bdb20"
+            "PURL": "pkg:apk/alpine/musl-utils@1.2.5-r10?arch=x86_64\u0026distro=3.22.2",
+            "UID": "5d2cabc1c2603ddb"
           },
-          "Version": "1.2.5-r9",
+          "Version": "1.2.5-r10",
           "Arch": "x86_64",
           "SrcName": "musl",
-          "SrcVersion": "1.2.5-r9",
+          "SrcVersion": "1.2.5-r10",
           "Licenses": [
             "MIT",
             "BSD-2-Clause",
@@ -687,13 +715,13 @@
           ],
           "Maintainer": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
           "DependsOn": [
-            "musl@1.2.5-r9",
+            "musl@1.2.5-r10",
             "scanelf@1.3.8-r1"
           ],
           "Layer": {
-            "DiffID": "sha256:922ec217407c0fd31cb18b46090bf62e439fb53ecd01f09406d62e25a906e09b"
+            "DiffID": "sha256:256f393e029fa2063d8c93720da36a74a032bed3355a2bc3e313ad12f8bde9d1"
           },
-          "Digest": "sha1:dd00323d3c0b14f2607f7a14ef503ebb4f737d22",
+          "Digest": "sha1:7e60d0820813baa8ac266bee158394c0a69f104a",
           "InstalledFiles": [
             "sbin/ldconfig",
             "usr/bin/getconf",
@@ -706,8 +734,8 @@
           "ID": "scanelf@1.3.8-r1",
           "Name": "scanelf",
           "Identifier": {
-            "PURL": "pkg:apk/alpine/scanelf@1.3.8-r1?arch=x86_64\u0026distro=3.21.5",
-            "UID": "bf82987948b9d086"
+            "PURL": "pkg:apk/alpine/scanelf@1.3.8-r1?arch=x86_64\u0026distro=3.22.2",
+            "UID": "c162fa31840265de"
           },
           "Version": "1.3.8-r1",
           "Arch": "x86_64",
@@ -718,40 +746,40 @@
           ],
           "Maintainer": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
           "DependsOn": [
-            "musl@1.2.5-r9"
+            "musl@1.2.5-r10"
           ],
           "Layer": {
-            "DiffID": "sha256:922ec217407c0fd31cb18b46090bf62e439fb53ecd01f09406d62e25a906e09b"
+            "DiffID": "sha256:256f393e029fa2063d8c93720da36a74a032bed3355a2bc3e313ad12f8bde9d1"
           },
-          "Digest": "sha1:77729f7622baeaafb6feaf7486f4f5452c1c7b62",
+          "Digest": "sha1:bd6dd1c820d476bcdf8ee38f003bcf2a73323b13",
           "InstalledFiles": [
             "usr/bin/scanelf"
           ]
         },
         {
-          "ID": "ssl_client@1.37.0-r14",
+          "ID": "ssl_client@1.37.0-r20",
           "Name": "ssl_client",
           "Identifier": {
-            "PURL": "pkg:apk/alpine/ssl_client@1.37.0-r14?arch=x86_64\u0026distro=3.21.5",
-            "UID": "ffa2c28674c0b721"
+            "PURL": "pkg:apk/alpine/ssl_client@1.37.0-r20?arch=x86_64\u0026distro=3.22.2",
+            "UID": "c8ecd6a28c029f44"
           },
-          "Version": "1.37.0-r14",
+          "Version": "1.37.0-r20",
           "Arch": "x86_64",
           "SrcName": "busybox",
-          "SrcVersion": "1.37.0-r14",
+          "SrcVersion": "1.37.0-r20",
           "Licenses": [
             "GPL-2.0-only"
           ],
           "Maintainer": "Sören Tempel \u003csoeren+alpine@soeren-tempel.net\u003e",
           "DependsOn": [
-            "libcrypto3@3.3.5-r0",
-            "libssl3@3.3.5-r0",
-            "musl@1.2.5-r9"
+            "libcrypto3@3.5.4-r0",
+            "libssl3@3.5.4-r0",
+            "musl@1.2.5-r10"
           ],
           "Layer": {
-            "DiffID": "sha256:44747efee49aadd5e1b1e6d042e1ac7325d30c0c59e7572aa81210c8115256b6"
+            "DiffID": "sha256:634da68794ef8339c6328556162b3acd9f38d3dd65ad5350bfa35152d0b80072"
           },
-          "Digest": "sha1:07f8874a42ad31bf4083351c8c236b18815e9614",
+          "Digest": "sha1:8bdfbaab4c99a5d77844ca989971c87161126784",
           "InstalledFiles": [
             "usr/bin/ssl_client"
           ]
@@ -760,8 +788,8 @@
           "ID": "tzdata@2025b-r0",
           "Name": "tzdata",
           "Identifier": {
-            "PURL": "pkg:apk/alpine/tzdata@2025b-r0?arch=x86_64\u0026distro=3.21.5",
-            "UID": "6cba6d84bcc14dc5"
+            "PURL": "pkg:apk/alpine/tzdata@2025b-r0?arch=x86_64\u0026distro=3.22.2",
+            "UID": "7b70eccd3a32918f"
           },
           "Version": "2025b-r0",
           "Arch": "x86_64",
@@ -772,9 +800,9 @@
           ],
           "Maintainer": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
           "Layer": {
-            "DiffID": "sha256:44747efee49aadd5e1b1e6d042e1ac7325d30c0c59e7572aa81210c8115256b6"
+            "DiffID": "sha256:634da68794ef8339c6328556162b3acd9f38d3dd65ad5350bfa35152d0b80072"
           },
-          "Digest": "sha1:c4fd9128726d6147b326fdaf47a64e72749b3488",
+          "Digest": "sha1:182532a94e272a7ae1d262249729c8bcbb10891d",
           "InstalledFiles": [
             "usr/share/zoneinfo/CET",
             "usr/share/zoneinfo/CST6CDT",
@@ -1385,8 +1413,8 @@
           "ID": "zlib@1.3.1-r2",
           "Name": "zlib",
           "Identifier": {
-            "PURL": "pkg:apk/alpine/zlib@1.3.1-r2?arch=x86_64\u0026distro=3.21.5",
-            "UID": "dbc516c528e08e63"
+            "PURL": "pkg:apk/alpine/zlib@1.3.1-r2?arch=x86_64\u0026distro=3.22.2",
+            "UID": "a165403c2117fdcf"
           },
           "Version": "1.3.1-r2",
           "Arch": "x86_64",
@@ -1397,12 +1425,12 @@
           ],
           "Maintainer": "Natanael Copa \u003cncopa@alpinelinux.org\u003e",
           "DependsOn": [
-            "musl@1.2.5-r9"
+            "musl@1.2.5-r10"
           ],
           "Layer": {
-            "DiffID": "sha256:922ec217407c0fd31cb18b46090bf62e439fb53ecd01f09406d62e25a906e09b"
+            "DiffID": "sha256:256f393e029fa2063d8c93720da36a74a032bed3355a2bc3e313ad12f8bde9d1"
           },
-          "Digest": "sha1:f0b90f76367ac51b4a3e70432ed00e6dca6a7432",
+          "Digest": "sha1:bf7d90d89e5429c18167b91ab8d7e6256cfc7fdf",
           "InstalledFiles": [
             "usr/lib/libz.so.1",
             "usr/lib/libz.so.1.3.1"
@@ -1420,29 +1448,29 @@
           "Name": "github.com/murat-akpinar/Trivy-Dashboard/backend",
           "Identifier": {
             "PURL": "pkg:golang/github.com/murat-akpinar/trivy-dashboard/backend",
-            "UID": "b5a51dbc0cfb73aa"
+            "UID": "a8c93bf1d0322327"
           },
           "Relationship": "root",
           "DependsOn": [
             "github.com/go-chi/chi/v5@v5.2.3",
             "github.com/go-chi/cors@v1.2.2",
-            "stdlib@v1.23.12"
+            "stdlib@v1.25.4"
           ],
           "Layer": {
-            "DiffID": "sha256:f86af381f0d75c7ede0313902b1dd2d406d7fa18ba7af59fa45e447aa7c1f24d"
+            "DiffID": "sha256:4aa1bce4d145f58ceae52a50a298dfd0ca74c329471c20b51b8dadb2d57c5db9"
           }
         },
         {
-          "ID": "stdlib@v1.23.12",
+          "ID": "stdlib@v1.25.4",
           "Name": "stdlib",
           "Identifier": {
-            "PURL": "pkg:golang/stdlib@v1.23.12",
-            "UID": "4c84f165a12b51f5"
+            "PURL": "pkg:golang/stdlib@v1.25.4",
+            "UID": "3a4f10dd1b04d864"
           },
-          "Version": "v1.23.12",
+          "Version": "v1.25.4",
           "Relationship": "direct",
           "Layer": {
-            "DiffID": "sha256:f86af381f0d75c7ede0313902b1dd2d406d7fa18ba7af59fa45e447aa7c1f24d"
+            "DiffID": "sha256:4aa1bce4d145f58ceae52a50a298dfd0ca74c329471c20b51b8dadb2d57c5db9"
           }
         },
         {
@@ -1454,7 +1482,7 @@
           },
           "Version": "v5.2.3",
           "Layer": {
-            "DiffID": "sha256:f86af381f0d75c7ede0313902b1dd2d406d7fa18ba7af59fa45e447aa7c1f24d"
+            "DiffID": "sha256:4aa1bce4d145f58ceae52a50a298dfd0ca74c329471c20b51b8dadb2d57c5db9"
           }
         },
         {
@@ -1466,509 +1494,8 @@
           },
           "Version": "v1.2.2",
           "Layer": {
-            "DiffID": "sha256:f86af381f0d75c7ede0313902b1dd2d406d7fa18ba7af59fa45e447aa7c1f24d"
+            "DiffID": "sha256:4aa1bce4d145f58ceae52a50a298dfd0ca74c329471c20b51b8dadb2d57c5db9"
           }
-        }
-      ],
-      "Vulnerabilities": [
-        {
-          "VulnerabilityID": "CVE-2025-58183",
-          "PkgID": "stdlib@v1.23.12",
-          "PkgName": "stdlib",
-          "PkgIdentifier": {
-            "PURL": "pkg:golang/stdlib@v1.23.12",
-            "UID": "4c84f165a12b51f5"
-          },
-          "InstalledVersion": "v1.23.12",
-          "FixedVersion": "1.24.8, 1.25.2",
-          "Status": "fixed",
-          "Layer": {
-            "DiffID": "sha256:f86af381f0d75c7ede0313902b1dd2d406d7fa18ba7af59fa45e447aa7c1f24d"
-          },
-          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2025-58183",
-          "DataSource": {
-            "ID": "govulndb",
-            "Name": "The Go Vulnerability Database",
-            "URL": "https://pkg.go.dev/vuln/"
-          },
-          "Title": "golang: archive/tar: Unbounded allocation when parsing GNU sparse map",
-          "Description": "tar.Reader does not set a maximum size on the number of sparse region data blocks in GNU tar pax 1.0 sparse files. A maliciously-crafted archive containing a large number of sparse regions can cause a Reader to read an unbounded amount of data from the archive into memory. When reading from a compressed source, a small compressed input can result in large allocations.",
-          "Severity": "HIGH",
-          "VendorSeverity": {
-            "alma": 3,
-            "amazon": 3,
-            "bitnami": 2,
-            "oracle-oval": 3,
-            "redhat": 2
-          },
-          "CVSS": {
-            "bitnami": {
-              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L",
-              "V3Score": 4.3
-            },
-            "redhat": {
-              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
-              "V3Score": 7.5
-            }
-          },
-          "References": [
-            "http://www.openwall.com/lists/oss-security/2025/10/08/1",
-            "https://access.redhat.com/errata/RHSA-2025:22011",
-            "https://access.redhat.com/security/cve/CVE-2025-58183",
-            "https://bugzilla.redhat.com/2404715",
-            "https://bugzilla.redhat.com/2407258",
-            "https://errata.almalinux.org/9/ALSA-2025-22011.html",
-            "https://go.dev/cl/709861",
-            "https://go.dev/issue/75677",
-            "https://groups.google.com/g/golang-announce/c/4Emdl2iQ_bI",
-            "https://linux.oracle.com/cve/CVE-2025-58183.html",
-            "https://linux.oracle.com/errata/ELSA-2025-22011.html",
-            "https://nvd.nist.gov/vuln/detail/CVE-2025-58183",
-            "https://pkg.go.dev/vuln/GO-2025-4014",
-            "https://www.cve.org/CVERecord?id=CVE-2025-58183"
-          ],
-          "PublishedDate": "2025-10-29T23:16:19.357Z",
-          "LastModifiedDate": "2025-11-04T22:16:33.2Z"
-        },
-        {
-          "VulnerabilityID": "CVE-2025-58186",
-          "PkgID": "stdlib@v1.23.12",
-          "PkgName": "stdlib",
-          "PkgIdentifier": {
-            "PURL": "pkg:golang/stdlib@v1.23.12",
-            "UID": "4c84f165a12b51f5"
-          },
-          "InstalledVersion": "v1.23.12",
-          "FixedVersion": "1.24.8, 1.25.2",
-          "Status": "fixed",
-          "Layer": {
-            "DiffID": "sha256:f86af381f0d75c7ede0313902b1dd2d406d7fa18ba7af59fa45e447aa7c1f24d"
-          },
-          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2025-58186",
-          "DataSource": {
-            "ID": "govulndb",
-            "Name": "The Go Vulnerability Database",
-            "URL": "https://pkg.go.dev/vuln/"
-          },
-          "Title": "Despite HTTP headers having a default limit of 1MB, the number of cook ...",
-          "Description": "Despite HTTP headers having a default limit of 1MB, the number of cookies that can be parsed does not have a limit. By sending a lot of very small cookies such as \"a=;\", an attacker can make an HTTP server allocate a large amount of structs, causing large memory consumption.",
-          "Severity": "HIGH",
-          "VendorSeverity": {
-            "amazon": 3,
-            "bitnami": 2
-          },
-          "CVSS": {
-            "bitnami": {
-              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
-              "V3Score": 5.3
-            }
-          },
-          "References": [
-            "http://www.openwall.com/lists/oss-security/2025/10/08/1",
-            "https://go.dev/cl/709855",
-            "https://go.dev/issue/75672",
-            "https://groups.google.com/g/golang-announce/c/4Emdl2iQ_bI",
-            "https://nvd.nist.gov/vuln/detail/CVE-2025-58186",
-            "https://pkg.go.dev/vuln/GO-2025-4012"
-          ],
-          "PublishedDate": "2025-10-29T23:16:19.547Z",
-          "LastModifiedDate": "2025-11-04T22:16:33.45Z"
-        },
-        {
-          "VulnerabilityID": "CVE-2025-58187",
-          "PkgID": "stdlib@v1.23.12",
-          "PkgName": "stdlib",
-          "PkgIdentifier": {
-            "PURL": "pkg:golang/stdlib@v1.23.12",
-            "UID": "4c84f165a12b51f5"
-          },
-          "InstalledVersion": "v1.23.12",
-          "FixedVersion": "1.24.9, 1.25.3",
-          "Status": "fixed",
-          "Layer": {
-            "DiffID": "sha256:f86af381f0d75c7ede0313902b1dd2d406d7fa18ba7af59fa45e447aa7c1f24d"
-          },
-          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2025-58187",
-          "DataSource": {
-            "ID": "govulndb",
-            "Name": "The Go Vulnerability Database",
-            "URL": "https://pkg.go.dev/vuln/"
-          },
-          "Title": "Due to the design of the name constraint checking algorithm, the proce ...",
-          "Description": "Due to the design of the name constraint checking algorithm, the processing time of some inputs scale non-linearly with respect to the size of the certificate. This affects programs which validate arbitrary certificate chains.",
-          "Severity": "HIGH",
-          "VendorSeverity": {
-            "amazon": 3,
-            "bitnami": 3
-          },
-          "CVSS": {
-            "bitnami": {
-              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
-              "V3Score": 7.5
-            }
-          },
-          "References": [
-            "http://www.openwall.com/lists/oss-security/2025/10/08/1",
-            "https://go.dev/cl/709854",
-            "https://go.dev/issue/75681",
-            "https://groups.google.com/g/golang-announce/c/4Emdl2iQ_bI",
-            "https://nvd.nist.gov/vuln/detail/CVE-2025-58187",
-            "https://pkg.go.dev/vuln/GO-2025-4007"
-          ],
-          "PublishedDate": "2025-10-29T23:16:19.643Z",
-          "LastModifiedDate": "2025-11-20T23:15:52.007Z"
-        },
-        {
-          "VulnerabilityID": "CVE-2025-58188",
-          "PkgID": "stdlib@v1.23.12",
-          "PkgName": "stdlib",
-          "PkgIdentifier": {
-            "PURL": "pkg:golang/stdlib@v1.23.12",
-            "UID": "4c84f165a12b51f5"
-          },
-          "InstalledVersion": "v1.23.12",
-          "FixedVersion": "1.24.8, 1.25.2",
-          "Status": "fixed",
-          "Layer": {
-            "DiffID": "sha256:f86af381f0d75c7ede0313902b1dd2d406d7fa18ba7af59fa45e447aa7c1f24d"
-          },
-          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2025-58188",
-          "DataSource": {
-            "ID": "govulndb",
-            "Name": "The Go Vulnerability Database",
-            "URL": "https://pkg.go.dev/vuln/"
-          },
-          "Title": "Validating certificate chains which contain DSA public keys can cause  ...",
-          "Description": "Validating certificate chains which contain DSA public keys can cause programs to panic, due to a interface cast that assumes they implement the Equal method. This affects programs which validate arbitrary certificate chains.",
-          "Severity": "HIGH",
-          "VendorSeverity": {
-            "amazon": 3,
-            "bitnami": 3
-          },
-          "CVSS": {
-            "bitnami": {
-              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
-              "V3Score": 7.5
-            }
-          },
-          "References": [
-            "http://www.openwall.com/lists/oss-security/2025/10/08/1",
-            "https://go.dev/cl/709853",
-            "https://go.dev/issue/75675",
-            "https://groups.google.com/g/golang-announce/c/4Emdl2iQ_bI",
-            "https://nvd.nist.gov/vuln/detail/CVE-2025-58188",
-            "https://pkg.go.dev/vuln/GO-2025-4013"
-          ],
-          "PublishedDate": "2025-10-29T23:16:19.74Z",
-          "LastModifiedDate": "2025-11-04T22:16:33.74Z"
-        },
-        {
-          "VulnerabilityID": "CVE-2025-47912",
-          "PkgID": "stdlib@v1.23.12",
-          "PkgName": "stdlib",
-          "PkgIdentifier": {
-            "PURL": "pkg:golang/stdlib@v1.23.12",
-            "UID": "4c84f165a12b51f5"
-          },
-          "InstalledVersion": "v1.23.12",
-          "FixedVersion": "1.24.8, 1.25.2",
-          "Status": "fixed",
-          "Layer": {
-            "DiffID": "sha256:f86af381f0d75c7ede0313902b1dd2d406d7fa18ba7af59fa45e447aa7c1f24d"
-          },
-          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2025-47912",
-          "DataSource": {
-            "ID": "govulndb",
-            "Name": "The Go Vulnerability Database",
-            "URL": "https://pkg.go.dev/vuln/"
-          },
-          "Title": "net/url: Insufficient validation of bracketed IPv6 hostnames in net/url",
-          "Description": "The Parse function permits values other than IPv6 addresses to be included in square brackets within the host component of a URL. RFC 3986 permits IPv6 addresses to be included within the host component, enclosed within square brackets. For example: \"http://[::1]/\". IPv4 addresses and hostnames must not appear within square brackets. Parse did not enforce this requirement.",
-          "Severity": "MEDIUM",
-          "VendorSeverity": {
-            "amazon": 3,
-            "bitnami": 2,
-            "redhat": 2
-          },
-          "CVSS": {
-            "bitnami": {
-              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N",
-              "V3Score": 5.3
-            },
-            "redhat": {
-              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N",
-              "V3Score": 5.3
-            }
-          },
-          "References": [
-            "http://www.openwall.com/lists/oss-security/2025/10/08/1",
-            "https://access.redhat.com/security/cve/CVE-2025-47912",
-            "https://go.dev/cl/709857",
-            "https://go.dev/issue/75678",
-            "https://groups.google.com/g/golang-announce/c/4Emdl2iQ_bI",
-            "https://nvd.nist.gov/vuln/detail/CVE-2025-47912",
-            "https://pkg.go.dev/vuln/GO-2025-4010",
-            "https://www.cve.org/CVERecord?id=CVE-2025-47912"
-          ],
-          "PublishedDate": "2025-10-29T23:16:18.187Z",
-          "LastModifiedDate": "2025-11-04T22:16:16.497Z"
-        },
-        {
-          "VulnerabilityID": "CVE-2025-58185",
-          "PkgID": "stdlib@v1.23.12",
-          "PkgName": "stdlib",
-          "PkgIdentifier": {
-            "PURL": "pkg:golang/stdlib@v1.23.12",
-            "UID": "4c84f165a12b51f5"
-          },
-          "InstalledVersion": "v1.23.12",
-          "FixedVersion": "1.24.8, 1.25.2",
-          "Status": "fixed",
-          "Layer": {
-            "DiffID": "sha256:f86af381f0d75c7ede0313902b1dd2d406d7fa18ba7af59fa45e447aa7c1f24d"
-          },
-          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2025-58185",
-          "DataSource": {
-            "ID": "govulndb",
-            "Name": "The Go Vulnerability Database",
-            "URL": "https://pkg.go.dev/vuln/"
-          },
-          "Title": "encoding/asn1: Parsing DER payload can cause memory exhaustion in encoding/asn1",
-          "Description": "Parsing a maliciously crafted DER payload could allocate large amounts of memory, causing memory exhaustion.",
-          "Severity": "MEDIUM",
-          "VendorSeverity": {
-            "amazon": 3,
-            "bitnami": 2,
-            "redhat": 2
-          },
-          "CVSS": {
-            "bitnami": {
-              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
-              "V3Score": 5.3
-            },
-            "redhat": {
-              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
-              "V3Score": 5.3
-            }
-          },
-          "References": [
-            "http://www.openwall.com/lists/oss-security/2025/10/08/1",
-            "https://access.redhat.com/security/cve/CVE-2025-58185",
-            "https://github.com/golang/go/commit/8709a41d5ef7321f486a1857f189c3fee20e8edd",
-            "https://go.dev/cl/709856",
-            "https://go.dev/issue/75671",
-            "https://groups.google.com/g/golang-announce/c/4Emdl2iQ_bI",
-            "https://nvd.nist.gov/vuln/detail/CVE-2025-58185",
-            "https://pkg.go.dev/vuln/GO-2025-4011",
-            "https://www.cve.org/CVERecord?id=CVE-2025-58185"
-          ],
-          "PublishedDate": "2025-10-29T23:16:19.45Z",
-          "LastModifiedDate": "2025-11-04T22:16:33.327Z"
-        },
-        {
-          "VulnerabilityID": "CVE-2025-58189",
-          "PkgID": "stdlib@v1.23.12",
-          "PkgName": "stdlib",
-          "PkgIdentifier": {
-            "PURL": "pkg:golang/stdlib@v1.23.12",
-            "UID": "4c84f165a12b51f5"
-          },
-          "InstalledVersion": "v1.23.12",
-          "FixedVersion": "1.24.8, 1.25.2",
-          "Status": "fixed",
-          "Layer": {
-            "DiffID": "sha256:f86af381f0d75c7ede0313902b1dd2d406d7fa18ba7af59fa45e447aa7c1f24d"
-          },
-          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2025-58189",
-          "DataSource": {
-            "ID": "govulndb",
-            "Name": "The Go Vulnerability Database",
-            "URL": "https://pkg.go.dev/vuln/"
-          },
-          "Title": "crypto/tls: go crypto/tls ALPN negotiation error contains attacker controlled information",
-          "Description": "When Conn.Handshake fails during ALPN negotiation the error contains attacker controlled information (the ALPN protocols sent by the client) which is not escaped.",
-          "Severity": "MEDIUM",
-          "VendorSeverity": {
-            "amazon": 3,
-            "bitnami": 2,
-            "redhat": 2
-          },
-          "CVSS": {
-            "bitnami": {
-              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:N/A:N",
-              "V3Score": 5.3
-            },
-            "redhat": {
-              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N",
-              "V3Score": 5.3
-            }
-          },
-          "References": [
-            "http://www.openwall.com/lists/oss-security/2025/10/08/1",
-            "https://access.redhat.com/security/cve/CVE-2025-58189",
-            "https://go.dev/cl/707776",
-            "https://go.dev/issue/75652",
-            "https://groups.google.com/g/golang-announce/c/4Emdl2iQ_bI",
-            "https://nvd.nist.gov/vuln/detail/CVE-2025-58189",
-            "https://pkg.go.dev/vuln/GO-2025-4008",
-            "https://www.cve.org/CVERecord?id=CVE-2025-58189"
-          ],
-          "PublishedDate": "2025-10-29T23:16:19.833Z",
-          "LastModifiedDate": "2025-11-04T22:16:33.877Z"
-        },
-        {
-          "VulnerabilityID": "CVE-2025-61723",
-          "PkgID": "stdlib@v1.23.12",
-          "PkgName": "stdlib",
-          "PkgIdentifier": {
-            "PURL": "pkg:golang/stdlib@v1.23.12",
-            "UID": "4c84f165a12b51f5"
-          },
-          "InstalledVersion": "v1.23.12",
-          "FixedVersion": "1.24.8, 1.25.2",
-          "Status": "fixed",
-          "Layer": {
-            "DiffID": "sha256:f86af381f0d75c7ede0313902b1dd2d406d7fa18ba7af59fa45e447aa7c1f24d"
-          },
-          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2025-61723",
-          "DataSource": {
-            "ID": "govulndb",
-            "Name": "The Go Vulnerability Database",
-            "URL": "https://pkg.go.dev/vuln/"
-          },
-          "Title": "encoding/pem: Quadratic complexity when parsing some invalid inputs in encoding/pem",
-          "Description": "The processing time for parsing some invalid inputs scales non-linearly with respect to the size of the input. This affects programs which parse untrusted PEM inputs.",
-          "Severity": "MEDIUM",
-          "VendorSeverity": {
-            "amazon": 3,
-            "bitnami": 3,
-            "redhat": 2
-          },
-          "CVSS": {
-            "bitnami": {
-              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
-              "V3Score": 7.5
-            },
-            "redhat": {
-              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
-              "V3Score": 5.3
-            }
-          },
-          "References": [
-            "http://www.openwall.com/lists/oss-security/2025/10/08/1",
-            "https://access.redhat.com/security/cve/CVE-2025-61723",
-            "https://github.com/golang/go/commit/5ce8cd16f3859ec5ac4106ad8ec15d6236f4501b",
-            "https://go.dev/cl/709858",
-            "https://go.dev/issue/75676",
-            "https://groups.google.com/g/golang-announce/c/4Emdl2iQ_bI",
-            "https://nvd.nist.gov/vuln/detail/CVE-2025-61723",
-            "https://pkg.go.dev/vuln/GO-2025-4009",
-            "https://www.cve.org/CVERecord?id=CVE-2025-61723"
-          ],
-          "PublishedDate": "2025-10-29T23:16:19.927Z",
-          "LastModifiedDate": "2025-11-04T22:16:36.42Z"
-        },
-        {
-          "VulnerabilityID": "CVE-2025-61724",
-          "PkgID": "stdlib@v1.23.12",
-          "PkgName": "stdlib",
-          "PkgIdentifier": {
-            "PURL": "pkg:golang/stdlib@v1.23.12",
-            "UID": "4c84f165a12b51f5"
-          },
-          "InstalledVersion": "v1.23.12",
-          "FixedVersion": "1.24.8, 1.25.2",
-          "Status": "fixed",
-          "Layer": {
-            "DiffID": "sha256:f86af381f0d75c7ede0313902b1dd2d406d7fa18ba7af59fa45e447aa7c1f24d"
-          },
-          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2025-61724",
-          "DataSource": {
-            "ID": "govulndb",
-            "Name": "The Go Vulnerability Database",
-            "URL": "https://pkg.go.dev/vuln/"
-          },
-          "Title": "net/textproto: Excessive CPU consumption in Reader.ReadResponse in net/textproto",
-          "Description": "The Reader.ReadResponse function constructs a response string through repeated string concatenation of lines. When the number of lines in a response is large, this can cause excessive CPU consumption.",
-          "Severity": "MEDIUM",
-          "VendorSeverity": {
-            "amazon": 3,
-            "bitnami": 2,
-            "redhat": 2
-          },
-          "CVSS": {
-            "bitnami": {
-              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
-              "V3Score": 5.3
-            },
-            "redhat": {
-              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
-              "V3Score": 5.3
-            }
-          },
-          "References": [
-            "http://www.openwall.com/lists/oss-security/2025/10/08/1",
-            "https://access.redhat.com/security/cve/CVE-2025-61724",
-            "https://go.dev/cl/709859",
-            "https://go.dev/issue/75716",
-            "https://groups.google.com/g/golang-announce/c/4Emdl2iQ_bI",
-            "https://nvd.nist.gov/vuln/detail/CVE-2025-61724",
-            "https://pkg.go.dev/vuln/GO-2025-4015",
-            "https://www.cve.org/CVERecord?id=CVE-2025-61724"
-          ],
-          "PublishedDate": "2025-10-29T23:16:20.02Z",
-          "LastModifiedDate": "2025-11-04T22:16:36.567Z"
-        },
-        {
-          "VulnerabilityID": "CVE-2025-61725",
-          "PkgID": "stdlib@v1.23.12",
-          "PkgName": "stdlib",
-          "PkgIdentifier": {
-            "PURL": "pkg:golang/stdlib@v1.23.12",
-            "UID": "4c84f165a12b51f5"
-          },
-          "InstalledVersion": "v1.23.12",
-          "FixedVersion": "1.24.8, 1.25.2",
-          "Status": "fixed",
-          "Layer": {
-            "DiffID": "sha256:f86af381f0d75c7ede0313902b1dd2d406d7fa18ba7af59fa45e447aa7c1f24d"
-          },
-          "PrimaryURL": "https://avd.aquasec.com/nvd/cve-2025-61725",
-          "DataSource": {
-            "ID": "govulndb",
-            "Name": "The Go Vulnerability Database",
-            "URL": "https://pkg.go.dev/vuln/"
-          },
-          "Title": "net/mail: Excessive CPU consumption in ParseAddress in net/mail",
-          "Description": "The ParseAddress function constructeds domain-literal address components through repeated string concatenation. When parsing large domain-literal components, this can cause excessive CPU consumption.",
-          "Severity": "MEDIUM",
-          "VendorSeverity": {
-            "amazon": 3,
-            "bitnami": 3,
-            "redhat": 2
-          },
-          "CVSS": {
-            "bitnami": {
-              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H",
-              "V3Score": 7.5
-            },
-            "redhat": {
-              "V3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L",
-              "V3Score": 5.3
-            }
-          },
-          "References": [
-            "http://www.openwall.com/lists/oss-security/2025/10/08/1",
-            "https://access.redhat.com/security/cve/CVE-2025-61725",
-            "https://go.dev/cl/709860",
-            "https://go.dev/issue/75680",
-            "https://groups.google.com/g/golang-announce/c/4Emdl2iQ_bI",
-            "https://nvd.nist.gov/vuln/detail/CVE-2025-61725",
-            "https://pkg.go.dev/vuln/GO-2025-4006",
-            "https://www.cve.org/CVERecord?id=CVE-2025-61725"
-          ],
-          "PublishedDate": "2025-10-29T23:16:20.113Z",
-          "LastModifiedDate": "2025-11-04T22:16:36.693Z"
         }
       ]
     }

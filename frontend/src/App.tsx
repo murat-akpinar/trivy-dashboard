@@ -260,26 +260,9 @@ function App() {
     return data;
   }, [overallStats.severityCount]);
 
-  // Prepare unified timeline chart data with all projects (different colors)
+  // Prepare unified timeline chart data with all projects (different colors) - showing vulnerability count
+  // Each scan is shown as a separate point to see the trend over time
   const unifiedTimelineData = useMemo(() => {
-    // Get all unique dates
-    const dateSet = new Set<string>();
-    allScans.forEach(scan => {
-      const date = new Date(scan.modifiedAt).toLocaleDateString('tr-TR', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
-      });
-      dateSet.add(date);
-    });
-    
-    // Sort dates
-    const sortedDates = Array.from(dateSet).sort((a, b) => {
-      const dateA = new Date(a.split(' ').reverse().join(' '));
-      const dateB = new Date(b.split(' ').reverse().join(' '));
-      return dateA.getTime() - dateB.getTime();
-    });
-    
     // Get unique project names and assign colors
     const projectNames = Array.from(new Set(allScans.map(s => s.projectName).filter(Boolean)));
     const projectColors = [
@@ -293,23 +276,45 @@ function App() {
       '#f5c2e7', // pink
     ];
     
-    // Build data structure: { date, project1: count, project2: count, ... }
-    const data = sortedDates.map(date => {
-      const entry: Record<string, string | number> = { date };
-      
-      projectNames.forEach((projectName, index) => {
-        const projectScans = allScans.filter(s => {
-          const scanDate = new Date(s.modifiedAt).toLocaleDateString('tr-TR', { 
-            year: 'numeric', 
-            month: 'short', 
-            day: 'numeric' 
-          });
-          return s.projectName === projectName && scanDate === date;
-        });
-        entry[projectName] = projectScans.length;
+    // Sort all scans by date (oldest first)
+    const sortedScans = [...allScans].sort((a, b) => 
+      new Date(a.modifiedAt).getTime() - new Date(b.modifiedAt).getTime()
+    );
+    
+    // Build data structure: Each scan becomes a data point
+    // Format: { date: "26 Kas 2025, 22:09", project1: vulnCount or null, project2: vulnCount or null, ... }
+    const dataMap = new Map<string, Record<string, string | number | null>>();
+    
+    sortedScans.forEach(scan => {
+      const date = new Date(scan.modifiedAt);
+      // Format: "26 Kas 2025, 22:09" for better readability
+      const timestamp = date.toLocaleString('tr-TR', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
       });
       
-      return entry;
+      if (!dataMap.has(timestamp)) {
+        const entry: Record<string, string | number | null> = { date: timestamp };
+        projectNames.forEach(name => {
+          entry[name] = null; // Initialize as null
+        });
+        dataMap.set(timestamp, entry);
+      }
+      
+      const entry = dataMap.get(timestamp)!;
+      if (scan.projectName) {
+        entry[scan.projectName] = scan.totalVulns;
+      }
+    });
+    
+    // Convert map to array and sort by date
+    const data = Array.from(dataMap.values()).sort((a, b) => {
+      const dateA = new Date(a.date as string);
+      const dateB = new Date(b.date as string);
+      return dateA.getTime() - dateB.getTime();
     });
     
     return { data, projectNames, projectColors };
@@ -945,7 +950,7 @@ function App() {
 
           {/* Unified Timeline Chart - All Projects */}
           <div className="rounded-xl border border-catppuccin-surface0 bg-catppuccin-mantle/60 p-4">
-            <h2 className="text-sm font-semibold text-catppuccin-text mb-4">Tüm Projeler - Tarama Zaman Çizelgesi</h2>
+            <h2 className="text-sm font-semibold text-catppuccin-text mb-4">Tüm Projeler - Açık Sayısı Zaman Çizelgesi</h2>
             {unifiedTimelineData.data.length > 0 ? (
               <>
                 <ResponsiveContainer width="100%" height={300}>
@@ -962,7 +967,7 @@ function App() {
                     <YAxis 
                       stroke="#6c7086"
                       style={{ fontSize: '11px' }}
-                      label={{ value: 'Tarama Sayısı', angle: -90, position: 'insideLeft', style: { fontSize: '11px', fill: '#6c7086' } }}
+                      label={{ value: 'Açık Sayısı', angle: -90, position: 'insideLeft', style: { fontSize: '11px', fill: '#6c7086' } }}
                     />
                     <Tooltip 
                       contentStyle={{ 
@@ -970,6 +975,9 @@ function App() {
                         border: '1px solid #313244',
                         borderRadius: '8px',
                         color: '#cdd6f4'
+                      }}
+                      formatter={(value: number, name: string) => {
+                        return [`${value} açık`, name];
                       }}
                     />
                     {unifiedTimelineData.projectNames.map((projectName, index) => (
@@ -981,6 +989,7 @@ function App() {
                         strokeWidth={2}
                         dot={{ fill: unifiedTimelineData.projectColors[index % unifiedTimelineData.projectColors.length], r: 4 }}
                         activeDot={{ r: 6 }}
+                        connectNulls={false}
                         name={projectName}
                       />
                     ))}
