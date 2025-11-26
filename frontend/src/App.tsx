@@ -33,6 +33,32 @@ const API_BASE =
 
 type Page = 'dashboard' | 'projects' | 'project-detail';
 
+// Calculate grade based on severity counts
+function calculateGrade(severityCount: Record<string, number>): { grade: string; color: string } {
+  const critical = severityCount['CRITICAL'] || 0;
+  const high = severityCount['HIGH'] || 0;
+  const medium = severityCount['MEDIUM'] || 0;
+  const low = severityCount['LOW'] || 0;
+
+  // Grade A: No critical, low high/medium
+  if (critical === 0 && high <= 2 && medium <= 5) {
+    return { grade: 'A', color: 'catppuccin-green' };
+  }
+
+  // Grade B: No critical, moderate high/medium
+  if (critical === 0 && high <= 5 && medium <= 10) {
+    return { grade: 'B', color: 'catppuccin-blue' };
+  }
+
+  // Grade C: Low critical or moderate issues
+  if (critical <= 2 && high <= 8 && medium <= 15) {
+    return { grade: 'C', color: 'catppuccin-yellow' };
+  }
+
+  // Grade D: High critical or too many issues
+  return { grade: 'D', color: 'catppuccin-red' };
+}
+
 function App() {
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [loading, setLoading] = useState(false);
@@ -45,6 +71,9 @@ function App() {
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSeverity, setSelectedSeverity] = useState<string | null>(null);
+  const [expandedImages, setExpandedImages] = useState<Set<string>>(new Set());
+  const [imageVulnDetails, setImageVulnDetails] = useState<Record<string, Vulnerability[]>>({});
+  const [loadingImageDetails, setLoadingImageDetails] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!API_BASE) return;
@@ -106,6 +135,38 @@ function App() {
       .finally(() => setLoadingDetails(false));
   }, [selectedFilename]);
 
+  // Load vulnerabilities for expanded images
+  useEffect(() => {
+    if (!API_BASE || !projectDetails) return;
+
+    expandedImages.forEach((filename) => {
+      // Skip if already loaded
+      if (imageVulnDetails[filename] || loadingImageDetails[filename]) return;
+
+      setLoadingImageDetails((prev) => ({ ...prev, [filename]: true }));
+      fetch(`${API_BASE}/api/scans/${filename}`)
+        .then(async (res) => {
+          if (!res.ok) {
+            throw new Error(`API error: ${res.status}`);
+          }
+          return res.json();
+        })
+        .then((data: { vulnerabilities: Vulnerability[] }) => {
+          setImageVulnDetails((prev) => ({
+            ...prev,
+            [filename]: data.vulnerabilities || []
+          }));
+        })
+        .catch((err) => {
+          console.error('Failed to load details:', err);
+          setImageVulnDetails((prev) => ({ ...prev, [filename]: [] }));
+        })
+        .finally(() => {
+          setLoadingImageDetails((prev) => ({ ...prev, [filename]: false }));
+        });
+    });
+  }, [expandedImages, API_BASE, projectDetails]);
+
   // Calculate overall statistics
   const overallStats = useMemo(() => {
     const totalProjects = projects.length;
@@ -144,8 +205,9 @@ function App() {
                   setCurrentPage('projects');
                   setSelectedProject(null);
                   setProjectDetails(null);
-                  setSelectedFilename(null);
-                  setVulnDetails([]);
+                  setExpandedImages(new Set());
+                  setImageVulnDetails({});
+                  setLoadingImageDetails({});
                 }}
                 className="text-catppuccin-overlay1 hover:text-catppuccin-text mr-2"
               >
@@ -197,145 +259,181 @@ function App() {
               <div className="text-center py-8 text-catppuccin-overlay1">Henüz tarama bulunamadı.</div>
             ) : (
               <div className="space-y-4">
-                {projectDetails.images.map((image) => (
-                  <div
-                    key={image.filename}
-                    className="border border-catppuccin-surface0 rounded-lg p-4 bg-catppuccin-base/60"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <h3 className="text-sm font-semibold text-catppuccin-text">{image.imageName}</h3>
-                        <p className="text-xs text-catppuccin-overlay1 mt-1">
-                          {new Date(image.modifiedAt).toLocaleString()}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-4 text-xs">
-                        <div className="text-right">
-                          <span className="text-catppuccin-overlay1">Toplam: </span>
-                          <span className="font-semibold text-catppuccin-text">{image.totalVulns}</span>
+                {projectDetails.images.map((image) => {
+                  const isExpanded = expandedImages.has(image.filename);
+                  const { grade, color } = calculateGrade(image.severityCount);
+                  const toggleExpand = (e: React.MouseEvent) => {
+                    e.stopPropagation();
+                    setExpandedImages((prev) => {
+                      const newSet = new Set(prev);
+                      if (newSet.has(image.filename)) {
+                        newSet.delete(image.filename);
+                      } else {
+                        newSet.add(image.filename);
+                      }
+                      return newSet;
+                    });
+                  };
+
+                  return (
+                    <div key={image.filename} className="space-y-0">
+                      <div
+                        className={`border rounded-lg p-4 cursor-pointer hover:opacity-90 transition-all ${
+                          color === 'catppuccin-green'
+                            ? 'border-catppuccin-green bg-catppuccin-green/10'
+                            : color === 'catppuccin-blue'
+                              ? 'border-catppuccin-blue bg-catppuccin-blue/10'
+                              : color === 'catppuccin-yellow'
+                                ? 'border-catppuccin-yellow bg-catppuccin-yellow/10'
+                                : 'border-catppuccin-red bg-catppuccin-red/10'
+                        }`}
+                        onClick={toggleExpand}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-16 h-16 rounded-lg flex items-center justify-center text-2xl font-bold ${
+                                color === 'catppuccin-green'
+                                  ? 'bg-catppuccin-green/20 text-catppuccin-green'
+                                  : color === 'catppuccin-blue'
+                                    ? 'bg-catppuccin-blue/20 text-catppuccin-blue'
+                                    : color === 'catppuccin-yellow'
+                                      ? 'bg-catppuccin-yellow/20 text-catppuccin-yellow'
+                                      : 'bg-catppuccin-red/20 text-catppuccin-red'
+                              }`}
+                            >
+                              {grade}
+                            </div>
+                            <div>
+                              <h3 className="text-base font-semibold text-catppuccin-text">
+                                {image.imageName}
+                              </h3>
+                              <p className="text-xs text-catppuccin-overlay1 mt-1">
+                                {new Date(image.modifiedAt).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-6 text-sm">
+                            <div className="text-right">
+                              <span className="text-catppuccin-overlay1 text-xs">Toplam: </span>
+                              <span className="font-bold text-lg text-catppuccin-text">
+                                {image.totalVulns}
+                              </span>
+                            </div>
+                            <div className="flex gap-3">
+                              {image.severityCount['CRITICAL'] > 0 && (
+                                <span className="text-catppuccin-red font-bold text-base">
+                                  C:{image.severityCount['CRITICAL']}
+                                </span>
+                              )}
+                              {image.severityCount['HIGH'] > 0 && (
+                                <span className="text-catppuccin-peach font-bold text-base">
+                                  H:{image.severityCount['HIGH']}
+                                </span>
+                              )}
+                              {image.severityCount['MEDIUM'] > 0 && (
+                                <span className="text-catppuccin-yellow font-bold text-base">
+                                  M:{image.severityCount['MEDIUM']}
+                                </span>
+                              )}
+                              {image.severityCount['LOW'] > 0 && (
+                                <span className="text-catppuccin-blue font-bold text-base">
+                                  L:{image.severityCount['LOW']}
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex gap-2">
-                          {image.severityCount['CRITICAL'] > 0 && (
-                            <span className="text-catppuccin-red font-semibold">
-                              C:{image.severityCount['CRITICAL']}
-                            </span>
-                          )}
-                          {image.severityCount['HIGH'] > 0 && (
-                            <span className="text-catppuccin-peach font-semibold">
-                              H:{image.severityCount['HIGH']}
-                            </span>
-                          )}
-                          {image.severityCount['MEDIUM'] > 0 && (
-                            <span className="text-catppuccin-yellow font-semibold">
-                              M:{image.severityCount['MEDIUM']}
-                            </span>
-                          )}
-                          {image.severityCount['LOW'] > 0 && (
-                            <span className="text-catppuccin-blue font-semibold">
-                              L:{image.severityCount['LOW']}
-                            </span>
+                        <button
+                          onClick={toggleExpand}
+                          className="text-xs px-3 py-1 rounded border border-catppuccin-surface1 hover:bg-catppuccin-surface0 text-catppuccin-subtext0 transition-colors"
+                        >
+                          {isExpanded ? 'Açıkları Gizle ↑' : 'Açıkları Görüntüle ↓'}
+                        </button>
+                      </div>
+
+                      {isExpanded && (
+                        <div className="mt-2 border border-catppuccin-surface0 rounded-lg p-4 bg-catppuccin-mantle/60">
+                          {loadingImageDetails[image.filename] ? (
+                            <div className="text-center py-8 text-catppuccin-overlay1">
+                              Yükleniyor...
+                            </div>
+                          ) : (imageVulnDetails[image.filename] || []).length === 0 ? (
+                            <div className="text-center py-8 text-catppuccin-overlay1">
+                              Bu raporda açık bulunamadı.
+                            </div>
+                          ) : (
+                            <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                              {(imageVulnDetails[image.filename] || []).map((vuln, idx) => {
+                                const severityColor =
+                                  vuln.Severity === 'CRITICAL'
+                                    ? 'text-catppuccin-red'
+                                    : vuln.Severity === 'HIGH'
+                                      ? 'text-catppuccin-peach'
+                                      : vuln.Severity === 'MEDIUM'
+                                        ? 'text-catppuccin-yellow'
+                                        : vuln.Severity === 'LOW'
+                                          ? 'text-catppuccin-blue'
+                                          : 'text-catppuccin-overlay1';
+                                return (
+                                  <div
+                                    key={`${vuln.VulnerabilityID}-${idx}`}
+                                    className="border border-catppuccin-surface0 rounded-lg p-4 bg-catppuccin-base/60"
+                                  >
+                                    <div className="flex items-start justify-between mb-2">
+                                      <div>
+                                        <span className="font-mono text-xs text-catppuccin-teal">
+                                          {vuln.VulnerabilityID}
+                                        </span>
+                                        <span className={`ml-2 text-xs font-semibold ${severityColor}`}>
+                                          {vuln.Severity}
+                                        </span>
+                                      </div>
+                                      {vuln.PrimaryURL && (
+                                        <a
+                                          href={vuln.PrimaryURL}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-xs text-catppuccin-blue hover:underline"
+                                        >
+                                          Detay →
+                                        </a>
+                                      )}
+                                    </div>
+                                    <h3 className="text-sm font-semibold text-catppuccin-text mb-1">
+                                      {vuln.Title || vuln.VulnerabilityID}
+                                    </h3>
+                                    <div className="text-xs text-catppuccin-overlay1 mb-2">
+                                      <span className="font-mono">{vuln.PkgName}</span>
+                                      {vuln.InstalledVersion && (
+                                        <span className="ml-2">
+                                          v{vuln.InstalledVersion}
+                                          {vuln.FixedVersion && (
+                                            <span className="text-catppuccin-teal ml-1">
+                                              → v{vuln.FixedVersion}
+                                            </span>
+                                          )}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {vuln.Description && (
+                                      <p className="text-xs text-catppuccin-subtext0 mt-2 line-clamp-3">
+                                        {vuln.Description}
+                                      </p>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
                           )}
                         </div>
-                      </div>
+                      )}
                     </div>
-                    <button
-                      onClick={() => setSelectedFilename(image.filename)}
-                      className="text-xs px-3 py-1 rounded border border-catppuccin-surface1 hover:bg-catppuccin-surface0 text-catppuccin-subtext0"
-                    >
-                      Açıkları Görüntüle →
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </section>
-
-          {selectedFilename && (
-            <section className="rounded-xl border border-catppuccin-surface0 bg-catppuccin-mantle/60 p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-catppuccin-text">
-                  Açıklar: {selectedFilename}
-                </h2>
-                <button
-                  onClick={() => setSelectedFilename(null)}
-                  className="px-3 py-1 text-xs rounded border border-catppuccin-surface1 hover:bg-catppuccin-surface0 text-catppuccin-subtext0"
-                >
-                  Kapat
-                </button>
-              </div>
-
-              {loadingDetails ? (
-                <div className="text-center py-8 text-catppuccin-overlay1">Yükleniyor...</div>
-              ) : vulnDetails.length === 0 ? (
-                <div className="text-center py-8 text-catppuccin-overlay1">
-                  Bu raporda açık bulunamadı.
-                </div>
-              ) : (
-                <div className="space-y-3 max-h-[600px] overflow-y-auto">
-                  {vulnDetails.map((vuln, idx) => {
-                    const severityColor =
-                      vuln.Severity === 'CRITICAL'
-                        ? 'text-catppuccin-red'
-                        : vuln.Severity === 'HIGH'
-                          ? 'text-catppuccin-peach'
-                          : vuln.Severity === 'MEDIUM'
-                            ? 'text-catppuccin-yellow'
-                            : vuln.Severity === 'LOW'
-                              ? 'text-catppuccin-blue'
-                              : 'text-catppuccin-overlay1';
-                    return (
-                      <div
-                        key={`${vuln.VulnerabilityID}-${idx}`}
-                        className="border border-catppuccin-surface0 rounded-lg p-4 bg-catppuccin-base/60"
-                      >
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <span className="font-mono text-xs text-catppuccin-teal">
-                              {vuln.VulnerabilityID}
-                            </span>
-                            <span className={`ml-2 text-xs font-semibold ${severityColor}`}>
-                              {vuln.Severity}
-                            </span>
-                          </div>
-                          {vuln.PrimaryURL && (
-                            <a
-                              href={vuln.PrimaryURL}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-catppuccin-blue hover:underline"
-                            >
-                              Detay →
-                            </a>
-                          )}
-                        </div>
-                        <h3 className="text-sm font-semibold text-catppuccin-text mb-1">
-                          {vuln.Title || vuln.VulnerabilityID}
-                        </h3>
-                        <div className="text-xs text-catppuccin-overlay1 mb-2">
-                          <span className="font-mono">{vuln.PkgName}</span>
-                          {vuln.InstalledVersion && (
-                            <span className="ml-2">
-                              v{vuln.InstalledVersion}
-                              {vuln.FixedVersion && (
-                                <span className="text-catppuccin-teal ml-1">
-                                  → v{vuln.FixedVersion}
-                                </span>
-                              )}
-                            </span>
-                          )}
-                        </div>
-                        {vuln.Description && (
-                          <p className="text-xs text-catppuccin-subtext0 mt-2 line-clamp-3">
-                            {vuln.Description}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-          )}
         </main>
       </div>
     );

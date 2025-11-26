@@ -8,10 +8,13 @@ Trivy güvenlik tarama sonuçlarını toplayıp görselleştiren bir web dashboa
 
 - **Proje Bazlı Görünüm**: Her proje için tüm imajların (backend, frontend, vs.) taramalarını tek sayfada görüntüleme
 - **Severity Filtreleme**: CRITICAL, HIGH, MEDIUM, LOW severity'lerine göre projeleri filtreleme
+- **Harf Notu Sistemi**: Her imaj için otomatik güvenlik notu (A, B, C, D) - severity sayılarına göre hesaplanır
 - **Detaylı Vulnerability Listesi**: Her vulnerability için ID, açıklama, fixed version ve detay linkleri
 - **Genel Dashboard**: Tüm projelerin toplam istatistiklerini görüntüleme
 - **Arama Özelliği**: Proje listesinde arama yapma
 - **Docker Compose Desteği**: Tek komutla çalıştırma
+- **Catppuccin Mocha Tema**: Modern ve göz yormayan dark theme
+- **Cascadia Mono Font**: Monospace font desteği
 
 ---
 
@@ -175,6 +178,26 @@ trivy-dashboard/
 - **İmaj Listesi**: Projenin tüm imajları (backend, frontend, vs.)
 - **Tarama Özetleri**: Her imaj için son tarama tarihi ve açık sayıları
 - **Vulnerability Detayları**: "Açıkları Görüntüle" butonu ile detaylı liste
+- **Harf Notu Sistemi**: Her imaj için otomatik güvenlik notu (A, B, C, D)
+
+#### Harf Notu Matrisi
+
+Dashboard, her imaj için severity sayılarına göre otomatik olarak bir harf notu hesaplar:
+
+| Not | Koşullar | Renk | Açıklama |
+|-----|----------|------|----------|
+| **A** | CRITICAL = 0<br>HIGH ≤ 2<br>MEDIUM ≤ 5 | 🟢 Yeşil | Mükemmel güvenlik durumu |
+| **B** | CRITICAL = 0<br>HIGH ≤ 5<br>MEDIUM ≤ 10 | 🔵 Mavi | İyi güvenlik durumu |
+| **C** | CRITICAL ≤ 2<br>HIGH ≤ 8<br>MEDIUM ≤ 15 | 🟡 Sarı | Orta seviye güvenlik riski |
+| **D** | Diğer durumlar<br>(CRITICAL > 2 veya<br>HIGH > 8 veya<br>MEDIUM > 15) | 🔴 Kırmızı | Yüksek güvenlik riski |
+
+**Örnekler:**
+- 0 CRITICAL, 2 HIGH, 3 MEDIUM → **A** (Yeşil)
+- 0 CRITICAL, 4 HIGH, 8 MEDIUM → **B** (Mavi)
+- 1 CRITICAL, 5 HIGH, 10 MEDIUM → **C** (Sarı)
+- 4 CRITICAL, 5 MEDIUM, 2 LOW, 1 HIGH → **D** (Kırmızı)
+
+**Not**: LOW severity sayıları harf notu hesaplamasına dahil edilmez, sadece bilgilendirme amaçlı gösterilir.
 
 ---
 
