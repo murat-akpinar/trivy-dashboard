@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 type ProjectSummary = {
   projectName: string;
@@ -85,6 +86,7 @@ function App() {
   const [expandedImages, setExpandedImages] = useState<Set<string>>(new Set());
   const [imageVulnDetails, setImageVulnDetails] = useState<Record<string, Vulnerability[]>>({});
   const [loadingImageDetails, setLoadingImageDetails] = useState<Record<string, boolean>>({});
+  const [allScans, setAllScans] = useState<ScanSummary[]>([]);
 
   useEffect(() => {
     if (!API_BASE) return;
@@ -104,6 +106,24 @@ function App() {
         setError(err.message);
       })
       .finally(() => setLoading(false));
+  }, []);
+
+  // Fetch all scans for timeline chart
+  useEffect(() => {
+    if (!API_BASE) return;
+    fetch(`${API_BASE}/api/scans`)
+      .then(async (res) => {
+        if (!res.ok) {
+          throw new Error(`API error: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then((data: ScanSummary[]) => {
+        setAllScans(data);
+      })
+      .catch((err) => {
+        console.error('Failed to load scans:', err);
+      });
   }, []);
 
   useEffect(() => {
@@ -189,19 +209,32 @@ function App() {
     });
   }, [expandedImages, API_BASE, projectDetails]);
 
-  // Calculate overall statistics
+  // Calculate overall statistics - severity from latest scans only
   const overallStats = useMemo(() => {
     const totalProjects = projects.length;
     const totalScans = projects.reduce((sum, p) => sum + p.totalScans, 0);
-    const totalVulns = projects.reduce((sum, p) => sum + p.totalVulns, 0);
+    
+    // Calculate severity from latest scans only (for each project, get the latest scan)
     const severityCount: Record<string, number> = {};
+    let totalVulns = 0;
+    
     projects.forEach((p) => {
-      Object.keys(p.severityCount).forEach((severity) => {
-        severityCount[severity] = (severityCount[severity] || 0) + p.severityCount[severity];
-      });
+      // Get latest scan for this project (from allScans)
+      const projectScans = allScans
+        .filter(s => s.projectName === p.projectName)
+        .sort((a, b) => new Date(b.modifiedAt).getTime() - new Date(a.modifiedAt).getTime());
+      
+      if (projectScans.length > 0) {
+        const latestScan = projectScans[0];
+        totalVulns += latestScan.totalVulns;
+        Object.keys(latestScan.severityCount).forEach((severity) => {
+          severityCount[severity] = (severityCount[severity] || 0) + latestScan.severityCount[severity];
+        });
+      }
     });
+    
     return { totalProjects, totalScans, totalVulns, severityCount };
-  }, [projects]);
+  }, [projects, allScans]);
 
   // Filter projects based on search query
   const filteredProjects = useMemo(() => {
@@ -216,29 +249,111 @@ function App() {
     return projects.filter((p) => (p.severityCount[selectedSeverity] || 0) > 0);
   }, [projects, selectedSeverity]);
 
+  // Prepare pie chart data for severity distribution
+  const pieChartData = useMemo(() => {
+    const data = [
+      { name: 'CRITICAL', value: overallStats.severityCount['CRITICAL'] || 0, color: '#f38ba8' },
+      { name: 'HIGH', value: overallStats.severityCount['HIGH'] || 0, color: '#fab387' },
+      { name: 'MEDIUM', value: overallStats.severityCount['MEDIUM'] || 0, color: '#f9e2af' },
+      { name: 'LOW', value: overallStats.severityCount['LOW'] || 0, color: '#89b4fa' },
+    ].filter(item => item.value > 0);
+    return data;
+  }, [overallStats.severityCount]);
+
+  // Prepare unified timeline chart data with all projects (different colors)
+  const unifiedTimelineData = useMemo(() => {
+    // Get all unique dates
+    const dateSet = new Set<string>();
+    allScans.forEach(scan => {
+      const date = new Date(scan.modifiedAt).toLocaleDateString('tr-TR', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+      dateSet.add(date);
+    });
+    
+    // Sort dates
+    const sortedDates = Array.from(dateSet).sort((a, b) => {
+      const dateA = new Date(a.split(' ').reverse().join(' '));
+      const dateB = new Date(b.split(' ').reverse().join(' '));
+      return dateA.getTime() - dateB.getTime();
+    });
+    
+    // Get unique project names and assign colors
+    const projectNames = Array.from(new Set(allScans.map(s => s.projectName).filter(Boolean)));
+    const projectColors = [
+      '#89b4fa', // blue
+      '#f38ba8', // red
+      '#a6e3a1', // green
+      '#fab387', // peach
+      '#cba6f7', // mauve
+      '#f9e2af', // yellow
+      '#94e2d5', // teal
+      '#f5c2e7', // pink
+    ];
+    
+    // Build data structure: { date, project1: count, project2: count, ... }
+    const data = sortedDates.map(date => {
+      const entry: Record<string, string | number> = { date };
+      
+      projectNames.forEach((projectName, index) => {
+        const projectScans = allScans.filter(s => {
+          const scanDate = new Date(s.modifiedAt).toLocaleDateString('tr-TR', { 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric' 
+          });
+          return s.projectName === projectName && scanDate === date;
+        });
+        entry[projectName] = projectScans.length;
+      });
+      
+      return entry;
+    });
+    
+    return { data, projectNames, projectColors };
+  }, [allScans]);
+
   if (currentPage === 'project-detail' && projectDetails) {
     return (
       <div className="min-h-screen bg-catppuccin-base text-catppuccin-text">
         <header className="border-b border-catppuccin-surface0 bg-catppuccin-mantle/70 backdrop-blur">
           <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  setCurrentPage('projects');
-                  setSelectedProject(null);
-                  setProjectDetails(null);
-                  setExpandedImages(new Set());
-                  setImageVulnDetails({});
-                  setLoadingImageDetails({});
-                }}
-                className="text-catppuccin-overlay1 hover:text-catppuccin-text mr-2"
-              >
-                ← Geri
-              </button>
-              <span className="rounded bg-catppuccin-teal/10 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-catppuccin-teal">
-                {projectDetails.projectName}
-              </span>
-              <span className="text-lg font-semibold">Proje Detayları</span>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-sm">
+                <button
+                  onClick={() => {
+                    setCurrentPage('dashboard');
+                    setSelectedProject(null);
+                    setProjectDetails(null);
+                    setExpandedImages(new Set());
+                    setImageVulnDetails({});
+                    setLoadingImageDetails({});
+                  }}
+                  className="px-3 py-1.5 rounded border border-catppuccin-surface1 hover:bg-catppuccin-surface0 hover:border-catppuccin-teal text-catppuccin-text transition-colors font-medium"
+                >
+                  Ana Sayfa
+                </button>
+                <span className="text-catppuccin-overlay1">/</span>
+                <button
+                  onClick={() => {
+                    setCurrentPage('projects');
+                    setSelectedProject(null);
+                    setProjectDetails(null);
+                    setExpandedImages(new Set());
+                    setImageVulnDetails({});
+                    setLoadingImageDetails({});
+                  }}
+                  className="px-3 py-1.5 rounded border border-catppuccin-surface1 hover:bg-catppuccin-surface0 hover:border-catppuccin-teal text-catppuccin-text transition-colors font-medium"
+                >
+                  Projeler
+                </button>
+                <span className="text-catppuccin-overlay1">/</span>
+                <span className="px-3 py-1.5 rounded bg-catppuccin-teal/10 text-catppuccin-teal font-semibold">
+                  {projectDetails.projectName}
+                </span>
+              </div>
             </div>
             <span className="text-xs text-catppuccin-overlay1">Prototype UI</span>
           </div>
@@ -559,10 +674,10 @@ function App() {
       <div className="min-h-screen bg-catppuccin-base text-catppuccin-text">
         <header className="border-b border-catppuccin-surface0 bg-catppuccin-mantle/70 backdrop-blur">
           <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => setCurrentPage('dashboard')}
-                className="text-catppuccin-overlay1 hover:text-catppuccin-text mr-2"
+                className="px-3 py-1.5 rounded border border-catppuccin-surface1 hover:bg-catppuccin-surface0 hover:border-catppuccin-teal text-catppuccin-text transition-colors font-medium"
               >
                 ← Ana Sayfa
               </button>
@@ -681,21 +796,19 @@ function App() {
     <div className="min-h-screen bg-catppuccin-base text-catppuccin-text">
       <header className="border-b border-catppuccin-surface0 bg-catppuccin-mantle/70 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setCurrentPage('projects')}
+              className="px-3 py-1.5 rounded border border-catppuccin-surface1 hover:bg-catppuccin-surface0 hover:border-catppuccin-teal text-catppuccin-text transition-colors font-medium"
+            >
+              Projeler →
+            </button>
             <span className="rounded bg-catppuccin-teal/10 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-catppuccin-teal">
               Trivy
             </span>
             <span className="text-lg font-semibold">Dashboard</span>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setCurrentPage('projects')}
-              className="px-3 py-1 text-xs rounded border border-catppuccin-surface1 hover:bg-catppuccin-surface0 text-catppuccin-subtext0"
-            >
-              Projeler →
-            </button>
-            <span className="text-xs text-catppuccin-overlay1">Prototype UI</span>
-          </div>
+          <span className="text-xs text-catppuccin-overlay1">Prototype UI</span>
         </div>
       </header>
 
@@ -746,9 +859,6 @@ function App() {
             <p className="mt-2 text-3xl font-semibold text-catppuccin-red">
               {overallStats.severityCount['CRITICAL'] || 0}
             </p>
-            {selectedSeverity === 'CRITICAL' && (
-              <p className="mt-1 text-xs text-catppuccin-red">Tıklayarak kapat</p>
-            )}
           </div>
           <div
             className={`rounded-xl border p-4 cursor-pointer transition-all ${
@@ -762,9 +872,6 @@ function App() {
             <p className="mt-2 text-3xl font-semibold text-catppuccin-peach">
               {overallStats.severityCount['HIGH'] || 0}
             </p>
-            {selectedSeverity === 'HIGH' && (
-              <p className="mt-1 text-xs text-catppuccin-peach">Tıklayarak kapat</p>
-            )}
           </div>
           <div
             className={`rounded-xl border p-4 cursor-pointer transition-all ${
@@ -778,9 +885,6 @@ function App() {
             <p className="mt-2 text-3xl font-semibold text-catppuccin-yellow">
               {overallStats.severityCount['MEDIUM'] || 0}
             </p>
-            {selectedSeverity === 'MEDIUM' && (
-              <p className="mt-1 text-xs text-catppuccin-yellow">Tıklayarak kapat</p>
-            )}
           </div>
           <div
             className={`rounded-xl border p-4 cursor-pointer transition-all ${
@@ -794,8 +898,110 @@ function App() {
             <p className="mt-2 text-3xl font-semibold text-catppuccin-blue">
               {overallStats.severityCount['LOW'] || 0}
             </p>
-            {selectedSeverity === 'LOW' && (
-              <p className="mt-1 text-xs text-catppuccin-blue">Tıklayarak kapat</p>
+          </div>
+        </section>
+
+        {/* Charts Section */}
+        <section className="grid gap-4 md:grid-cols-2">
+          {/* Pie Chart - Severity Distribution */}
+          <div className="rounded-xl border border-catppuccin-surface0 bg-catppuccin-mantle/60 p-4">
+            <h2 className="text-sm font-semibold text-catppuccin-text mb-4">Severity Dağılımı (En Son Taramalar)</h2>
+            {pieChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={pieChartData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {pieChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#1e1e2e', 
+                      border: '1px solid #313244',
+                      borderRadius: '8px',
+                      color: '#cdd6f4'
+                    }}
+                  />
+                  <Legend 
+                    wrapperStyle={{ color: '#cdd6f4', fontSize: '12px' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-catppuccin-overlay1">
+                Henüz veri yok
+              </div>
+            )}
+          </div>
+
+          {/* Unified Timeline Chart - All Projects */}
+          <div className="rounded-xl border border-catppuccin-surface0 bg-catppuccin-mantle/60 p-4">
+            <h2 className="text-sm font-semibold text-catppuccin-text mb-4">Tüm Projeler - Tarama Zaman Çizelgesi</h2>
+            {unifiedTimelineData.data.length > 0 ? (
+              <>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={unifiedTimelineData.data}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#313244" />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="#6c7086"
+                      style={{ fontSize: '10px' }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
+                    />
+                    <YAxis 
+                      stroke="#6c7086"
+                      style={{ fontSize: '11px' }}
+                      label={{ value: 'Tarama Sayısı', angle: -90, position: 'insideLeft', style: { fontSize: '11px', fill: '#6c7086' } }}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: '#1e1e2e', 
+                        border: '1px solid #313244',
+                        borderRadius: '8px',
+                        color: '#cdd6f4'
+                      }}
+                    />
+                    {unifiedTimelineData.projectNames.map((projectName, index) => (
+                      <Line 
+                        key={projectName}
+                        type="monotone" 
+                        dataKey={projectName} 
+                        stroke={unifiedTimelineData.projectColors[index % unifiedTimelineData.projectColors.length]} 
+                        strokeWidth={2}
+                        dot={{ fill: unifiedTimelineData.projectColors[index % unifiedTimelineData.projectColors.length], r: 4 }}
+                        activeDot={{ r: 6 }}
+                        name={projectName}
+                      />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+                <div className="mt-3 flex flex-wrap gap-3 text-xs text-catppuccin-overlay1">
+                  {unifiedTimelineData.projectNames.map((projectName, index) => (
+                    <div key={projectName} className="flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded" 
+                        style={{ backgroundColor: unifiedTimelineData.projectColors[index % unifiedTimelineData.projectColors.length] }}
+                      ></div>
+                      <span>{projectName}</span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="flex items-center justify-center h-[300px] text-catppuccin-overlay1">
+                Henüz veri yok
+              </div>
             )}
           </div>
         </section>
