@@ -36,6 +36,7 @@ type ScanSummary struct {
 	ArtifactName  string         `json:"artifactName,omitempty"`
 	ProjectName   string         `json:"projectName,omitempty"`
 	ImageName     string         `json:"imageName,omitempty"`
+	Tag           string         `json:"tag,omitempty"`
 	TotalVulns    int            `json:"totalVulns"`
 	SeverityCount map[string]int `json:"severityCount"`
 }
@@ -176,10 +177,6 @@ func main() {
 				continue
 			}
 
-			// Extract project and image name from path
-			// Support both: export/project/image.json and export/project-image.json
-			projectName, imageName := extractProjectAndImageFromPath(relPath, exportDir)
-
 			// Determine scan time: prefer timestamp in filename if present, fallback to file mod time
 			scanTime := extractTimestampFromPath(relPath, info.ModTime())
 
@@ -189,11 +186,16 @@ func main() {
 				ModifiedAt:    scanTime,
 				SeverityCount: make(map[string]int),
 			}
-			summary.ProjectName = projectName
-			summary.ImageName = imageName
 
+			// Parse JSON to get ArtifactName
+			var projectName, imageName, tag string
 			if report, err := parseTrivyJSON(filePath); err == nil {
 				summary.ArtifactName = report.ArtifactName
+				
+				// Try to extract project, image, and tag from ArtifactName first
+				projectName, imageName, tag = extractProjectImageTagFromArtifactName(report.ArtifactName)
+				summary.Tag = tag
+				
 				total := 0
 				for _, result := range report.Results {
 					for _, vuln := range result.Vulnerabilities {
@@ -207,6 +209,14 @@ func main() {
 				}
 				summary.TotalVulns = total
 			}
+
+			// Fallback to filename parsing if ArtifactName parsing failed
+			if projectName == "" || imageName == "" {
+				projectName, imageName = extractProjectAndImageFromPath(relPath, exportDir)
+			}
+
+			summary.ProjectName = projectName
+			summary.ImageName = imageName
 
 			scans = append(scans, summary)
 		}
@@ -246,11 +256,51 @@ func main() {
 				continue
 			}
 
-			// Extract project and image name from path
-			projectName, imageName := extractProjectAndImageFromPath(relPath, exportDir)
+			// Determine scan time: prefer timestamp in filename if present, fallback to file mod time
+			scanTime := extractTimestampFromPath(relPath, info.ModTime())
+
+			// Create scan summary
+			scanSummary := ScanSummary{
+				Filename:      relPath, // Store relative path
+				Size:          info.Size(),
+				ModifiedAt:    scanTime,
+				SeverityCount: make(map[string]int),
+			}
+
+			// Parse JSON to get ArtifactName
+			var projectName, imageName, tag string
+			if report, err := parseTrivyJSON(filePath); err == nil {
+				scanSummary.ArtifactName = report.ArtifactName
+				
+				// Try to extract project, image, and tag from ArtifactName first
+				projectName, imageName, tag = extractProjectImageTagFromArtifactName(report.ArtifactName)
+				scanSummary.Tag = tag
+				
+				total := 0
+				for _, result := range report.Results {
+					for _, vuln := range result.Vulnerabilities {
+						total++
+						severity := strings.ToUpper(vuln.Severity)
+						if severity == "" {
+							severity = "UNKNOWN"
+						}
+						scanSummary.SeverityCount[severity]++
+					}
+				}
+				scanSummary.TotalVulns = total
+			}
+
+			// Fallback to filename parsing if ArtifactName parsing failed
+			if projectName == "" || imageName == "" {
+				projectName, imageName = extractProjectAndImageFromPath(relPath, exportDir)
+			}
+			
 			if projectName == "" || imageName == "" {
 				continue
 			}
+
+			scanSummary.ProjectName = projectName
+			scanSummary.ImageName = imageName
 
 			if projectsMap[projectName] == nil {
 				projectsMap[projectName] = &ProjectSummary{
@@ -263,37 +313,6 @@ func main() {
 
 			project := projectsMap[projectName]
 			project.TotalScans++
-
-			// Determine scan time: prefer timestamp in filename if present, fallback to file mod time
-			scanTime := extractTimestampFromPath(relPath, info.ModTime())
-
-			// Create scan summary
-			scanSummary := ScanSummary{
-				Filename:      relPath, // Store relative path
-				Size:          info.Size(),
-				ModifiedAt:    scanTime,
-				SeverityCount: make(map[string]int),
-			}
-			scanSummary.ProjectName = projectName
-			scanSummary.ImageName = imageName
-
-			if report, err := parseTrivyJSON(filePath); err == nil {
-				scanSummary.ArtifactName = report.ArtifactName
-				total := 0
-				for _, result := range report.Results {
-					for _, vuln := range result.Vulnerabilities {
-						total++
-						severity := strings.ToUpper(vuln.Severity)
-						if severity == "" {
-							severity = "UNKNOWN"
-						}
-						scanSummary.SeverityCount[severity]++
-						project.SeverityCount[severity]++
-					}
-				}
-				scanSummary.TotalVulns = total
-				project.TotalVulns += total
-			}
 
 			// Initialize image summary if not exists
 			if imagesMap[projectName][imageName] == nil {
@@ -324,6 +343,10 @@ func main() {
 
 		// Convert images map to slice
 		for projectName, project := range projectsMap {
+			// Reset project totals to ensure we only use latest scans per image
+			project.TotalVulns = 0
+			project.SeverityCount = make(map[string]int)
+
 			for _, imageSummary := range imagesMap[projectName] {
 				// Sort scans by date (newest first)
 				scans := imageSummary.Scans
@@ -335,6 +358,13 @@ func main() {
 					}
 				}
 				imageSummary.Scans = scans
+
+				// Aggregate project totals from latest scan of each image
+				project.TotalVulns += imageSummary.TotalVulns
+				for severity, count := range imageSummary.SeverityCount {
+					project.SeverityCount[severity] += count
+				}
+
 				project.Images = append(project.Images, *imageSummary)
 			}
 		}
@@ -387,21 +417,10 @@ func main() {
 				continue
 			}
 
-			fileProjectName, imageName := extractProjectAndImageFromPath(relPath, exportDir)
-			if fileProjectName != projectName {
-				continue
-			}
-
-			if imageName == "" {
-				continue
-			}
-
 			info, err := os.Stat(filePath)
 			if err != nil {
 				continue
 			}
-
-			project.TotalScans++
 
 			// Determine scan time: prefer timestamp in filename if present, fallback to file mod time
 			scanTime := extractTimestampFromPath(relPath, info.ModTime())
@@ -413,11 +432,15 @@ func main() {
 				ModifiedAt:    scanTime,
 				SeverityCount: make(map[string]int),
 			}
-			scanSummary.ProjectName = fileProjectName
-			scanSummary.ImageName = imageName
 
+			// Parse JSON to get ArtifactName
+			var fileProjectName, imageName, tag string
 			if report, err := parseTrivyJSON(filePath); err == nil {
 				scanSummary.ArtifactName = report.ArtifactName
+				
+				// Try to extract project, image, and tag from ArtifactName first
+				fileProjectName, imageName, tag = extractProjectImageTagFromArtifactName(report.ArtifactName)
+				scanSummary.Tag = tag
 				total := 0
 				for _, result := range report.Results {
 					for _, vuln := range result.Vulnerabilities {
@@ -433,6 +456,25 @@ func main() {
 				scanSummary.TotalVulns = total
 				// Don't add to project.TotalVulns here - we'll calculate from latest scans only
 			}
+
+			// Fallback to filename parsing if ArtifactName parsing failed
+			if fileProjectName == "" || imageName == "" {
+				fileProjectName, imageName = extractProjectAndImageFromPath(relPath, exportDir)
+			}
+
+			// Skip if project name doesn't match or image name is empty
+			if fileProjectName != projectName {
+				continue
+			}
+
+			if imageName == "" {
+				continue
+			}
+
+			scanSummary.ProjectName = fileProjectName
+			scanSummary.ImageName = imageName
+
+			project.TotalScans++
 
 			// Initialize image summary if not exists
 			if imagesMap[imageName] == nil {
@@ -718,6 +760,50 @@ func extractTimestampFromPath(relPath string, defaultTime time.Time) time.Time {
 	}
 
 	return defaultTime
+}
+
+// extractProjectImageTagFromArtifactName extracts project, image, and tag from ArtifactName
+// Format: {project-name}-{image-name}:{tag}
+// Example: "trivy-dashboard-backend:latest" -> project: "trivy-dashboard", image: "backend", tag: "latest"
+// Example: "my-service-api:v1.0.0" -> project: "my-service", image: "api", tag: "v1.0.0"
+// Returns empty strings if parsing fails
+func extractProjectImageTagFromArtifactName(artifactName string) (projectName, imageName, tag string) {
+	if artifactName == "" {
+		return "", "", ""
+	}
+
+	// Split by colon to get tag
+	parts := strings.Split(artifactName, ":")
+	var namePart string
+	if len(parts) == 2 {
+		namePart = parts[0]
+		tag = parts[1]
+	} else if len(parts) == 1 {
+		namePart = parts[0]
+		tag = "" // No tag specified
+	} else {
+		// Multiple colons? Use last one as tag
+		lastColon := strings.LastIndex(artifactName, ":")
+		if lastColon > 0 && lastColon < len(artifactName)-1 {
+			namePart = artifactName[:lastColon]
+			tag = artifactName[lastColon+1:]
+		} else {
+			return "", "", ""
+		}
+	}
+
+	// Find last dash to split project and image
+	// Format: {project-name}-{image-name}
+	lastDash := strings.LastIndex(namePart, "-")
+	if lastDash == -1 || lastDash == 0 || lastDash == len(namePart)-1 {
+		// No dash found, or dash at start/end - treat whole name as project
+		return namePart, "", tag
+	}
+
+	projectName = namePart[:lastDash]
+	imageName = namePart[lastDash+1:]
+
+	return projectName, imageName, tag
 }
 
 // extractProjectAndImage is kept for backward compatibility

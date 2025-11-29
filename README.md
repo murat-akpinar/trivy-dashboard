@@ -7,6 +7,20 @@ Trivy güvenlik tarama sonuçlarını toplayıp görselleştiren bir web dashboa
 ![Project](/images/project.png)
 ---
 
+## Proje Amacı
+
+- Trivy tarama sonuçlarını (vulnerability, misconfiguration vb.) kullanıcı dostu bir web arayüzünde görüntülemek.
+- CI/CD süreçlerinden veya manuel taramalardan çıkan JSON çıktılarının okunabilir ve analiz edilebilir hale getirilmesi.
+- Birden fazla proje ve Docker imajının güvenlik durumunu tek bir dashboard üzerinden takip etmek.
+- Açıkların önem derecesine (CRITICAL / HIGH / MEDIUM / LOW) göre filtreleme ve sınıflandırma imkânı sağlamak.
+- Her imaj için genel güvenlik seviyesini özetleyen "harf notu (A/B/C/D)" sistemi sunmak.
+- Projeler arası karşılaştırma yapabilmek ve güvenlik durumunu hızlıca değerlendirebilmek.
+- Tarama sonuçlarını düzenli, tekrar erişilebilir ve merkezi bir yapıda saklamak.
+- Güvenlik açıklarının detaylarına hızlı erişim, arama ve inceleme kolaylığı sağlamak.
+- Kurum içinde güvenlik farkındalığını artırmak ve süreçleri daha şeffaf hale getirmek.
+
+---
+
 ## Özellikler
 
 - **Proje Bazlı Görünüm**: Her proje için tüm imajların (backend, frontend, vs.) taramalarını tek sayfada görüntüleme
@@ -100,7 +114,11 @@ Projeyi özelleştirmek için `.env` dosyası oluşturabilirsiniz:
 
 ### Dosya Adı Formatı
 
-Trivy JSON raporlarını `export/` klasörüne koyarken şu formatları kullanabilirsiniz:
+**Önemli:** Backend artık JSON dosyasının içindeki `ArtifactName` alanından proje, imaj ve tag bilgisini otomatik olarak parse ediyor. Bu sayede dosya adı formatından bağımsız olarak çalışır.
+
+**Örnek:** `ArtifactName: "trivy-dashboard-backend:latest"` → Proje: `trivy-dashboard`, İmaj: `backend`, Tag: `latest`
+
+Trivy JSON raporlarını `export/` klasörüne koyarken şu formatları kullanabilirsiniz (dosya adı artık sadece organizasyon için):
 
 #### Yapı 1: Düz Yapı (Flat Structure)
 
@@ -148,6 +166,29 @@ export/{proje-ismi}/{imaj-ismi}-{YYYYMMDD-HHMMSS}.json
 - Zaman damgası formatı `YYYYMMDD-HHMMSS` şeklindedir
 - Aynı proje-imaj kombinasyonu için birden fazla tarama yaparsanız, tüm taramalar dashboard'da görüntülenecektir
 - Backend otomatik olarak tüm alt dizinlerdeki JSON dosyalarını tarar (recursive)
+
+#### ArtifactName'den Otomatik Parse (Önerilen)
+
+Backend artık JSON dosyasının içindeki `ArtifactName` alanından proje, imaj ve tag bilgisini otomatik olarak çıkarıyor. Bu sayede dosya adı formatından bağımsız çalışır.
+
+**Format:** `{proje-ismi}-{imaj-ismi}:{tag}`
+
+**Örnekler:**
+- `ArtifactName: "trivy-dashboard-backend:latest"` → Proje: `trivy-dashboard`, İmaj: `backend`, Tag: `latest`
+- `ArtifactName: "my-service-api:v1.0.0"` → Proje: `my-service`, İmaj: `api`, Tag: `v1.0.0`
+- `ArtifactName: "git-effort-frontend:dev"` → Proje: `git-effort`, İmaj: `frontend`, Tag: `dev`
+
+**Avantajlar:**
+- ✅ Dosya adı formatından bağımsız (istediğin gibi isimlendirebilirsin)
+- ✅ Tag bilgisi otomatik olarak yakalanır
+- ✅ JSON içindeki gerçek veriyi kullanır (daha güvenilir)
+- ✅ Eğer `ArtifactName` parse edilemezse, dosya adından fallback yapar (geriye uyumlu)
+
+**Dosya adı örnekleri (organizasyon için):**
+- `export/git-effort/backend-latest-20251126-215219.json`
+- `export/git-effort/frontend-v1.0.0-20251126-215219.json`
+- `export/git-effort/api-dev-20251126-215219.json`
+- Veya sadece: `export/git-effort/scan-20251126-215219.json` (ArtifactName'den parse edilir)
 
 ### Jenkins Pipeline Örneği
 
@@ -319,16 +360,16 @@ Dashboard, her imaj için severity sayılarına göre otomatik olarak bir harf n
 
 ### Gelecek Özellikler
 
-1. **Zaman Serisi Analizi**: Aynı imaj için farklı zamanlardaki taramaları karşılaştırma
-2. **Trend Grafikleri**: Vulnerability sayılarının zaman içindeki değişimini görselleştirme
-3. **E-posta Bildirimleri**: Yeni CRITICAL/HIGH açıklar bulunduğunda bildirim gönderme
-4. **Export/Import**: Tarama sonuçlarını yedekleme ve geri yükleme
-5. **API Authentication**: Backend API'sine erişim kontrolü
-6. **Database Entegrasyonu**: SQLite/PostgreSQL ile tarama geçmişini saklama
-7. **Webhook Desteği**: CI/CD pipeline'lardan otomatik tarama tetikleme
-8. **Filtreleme ve Sıralama**: Vulnerability listesinde gelişmiş filtreleme
-9. **Karşılaştırma Modu**: İki tarama sonucunu yan yana karşılaştırma
-10. **Otomatik Temizlik**: Eski tarama dosyalarını otomatik silme (retention policy)
+- [ ] **Zaman Serisi Analizi**: Aynı imaj için farklı zamanlardaki taramaları karşılaştırma
+- [ ] **Trend Grafikleri**: Vulnerability sayılarının zaman içindeki değişimini görselleştirme
+- [ ] **E-posta Bildirimleri**: Yeni CRITICAL/HIGH açıklar bulunduğunda bildirim gönderme
+- [ ] **Export/Import**: Tarama sonuçlarını yedekleme ve geri yükleme
+- [ ] **API Authentication**: Backend API'sine erişim kontrolü
+- [ ] **Database Entegrasyonu**: SQLite/PostgreSQL ile tarama geçmişini saklama
+- [ ] **Webhook Desteği**: CI/CD pipeline'lardan otomatik tarama tetikleme
+- [ ] **Filtreleme ve Sıralama**: Vulnerability listesinde gelişmiş filtreleme
+- [ ] **Karşılaştırma Modu**: İki tarama sonucunu yan yana karşılaştırma
+- [ ] **Otomatik Temizlik**: Eski tarama dosyalarını otomatik silme (retention policy)
 
 ### Mevcut Özellikler
 
