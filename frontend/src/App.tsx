@@ -520,7 +520,35 @@ function App() {
     return { data, seriesNames };
   }, [allScans, selectedProject, separateVersions]);
 
-  if (currentPage === 'project-detail' && projectDetails) {
+  // Show loading or project detail page
+  if (currentPage === 'project-detail') {
+    if (loadingDetails || !projectDetails) {
+      return (
+        <div className="min-h-screen bg-catppuccin-base text-catppuccin-text">
+          <header className="border-b border-catppuccin-surface0 bg-catppuccin-mantle/70 backdrop-blur">
+            <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    setCurrentPage('dashboard');
+                    setSelectedProject(null);
+                    setProjectDetails(null);
+                  }}
+                  className="px-3 py-1.5 rounded border border-catppuccin-surface1 hover:bg-catppuccin-surface0 hover:border-catppuccin-teal text-catppuccin-text transition-colors font-medium"
+                >
+                  ← Ana Sayfa
+                </button>
+              </div>
+            </div>
+          </header>
+          <main className="mx-auto max-w-5xl px-4 py-6">
+            <div className="flex items-center justify-center h-64">
+              <p className="text-catppuccin-overlay1">Yükleniyor...</p>
+            </div>
+          </main>
+        </div>
+      );
+    }
     return (
       <div className="min-h-screen bg-catppuccin-base text-catppuccin-text">
         <header className="border-b border-catppuccin-surface0 bg-catppuccin-mantle/70 backdrop-blur">

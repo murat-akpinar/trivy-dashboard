@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -336,19 +338,7 @@ func main() {
 			imageSummary := imagesMap[projectName][imageName]
 			imageSummary.Scans = append(imageSummary.Scans, scanSummary)
 
-			// Update image totals (use latest scan)
-			if scanSummary.ModifiedAt.After(imageSummary.LastScan) {
-				imageSummary.LastScan = scanSummary.ModifiedAt
-				imageSummary.TotalVulns = scanSummary.TotalVulns
-				imageSummary.SeverityCount = make(map[string]int)
-				for k, v := range scanSummary.SeverityCount {
-					imageSummary.SeverityCount[k] = v
-				}
-			}
-
-			if scanSummary.ModifiedAt.After(project.LastScan) {
-				project.LastScan = scanSummary.ModifiedAt
-			}
+			// Don't update image totals or project.LastScan here - we'll do it after sorting
 		}
 
 		// Convert images map to slice
@@ -358,16 +348,50 @@ func main() {
 			project.SeverityCount = make(map[string]int)
 
 			for _, imageSummary := range imagesMap[projectName] {
-				// Sort scans by date (newest first)
+				// Sort scans: first by tag version (newer first), then by date (newest first) if same version
 				scans := imageSummary.Scans
-				for i := 0; i < len(scans)-1; i++ {
-					for j := i + 1; j < len(scans); j++ {
-						if scans[i].ModifiedAt.Before(scans[j].ModifiedAt) {
-							scans[i], scans[j] = scans[j], scans[i]
+				sort.Slice(scans, func(i, j int) bool {
+					tagI := scans[i].Tag
+					tagJ := scans[j].Tag
+					
+					// Compare tags as version strings (e.g., "6.7.1" > "6.6.2")
+					if tagI != "" && tagJ != "" {
+						// Both have tags, compare as version strings (newer version should be first)
+						// Use compareVersionTags: returns -1 if tagI < tagJ, 1 if tagI > tagJ, 0 if equal
+						cmp := compareVersionTags(tagI, tagJ)
+						if cmp < 0 {
+							// Tag I is older (smaller), i should come after j (return false)
+							return false
+						} else if cmp > 0 {
+							// Tag I is newer (larger), i should come before j (return true)
+							return true
+						} else {
+							// Same tag, sort by date (newest first)
+							return scans[i].ModifiedAt.After(scans[j].ModifiedAt)
 						}
+					} else if tagI == "" && tagJ == "" {
+						// Both empty, sort by date (newest first)
+						return scans[i].ModifiedAt.After(scans[j].ModifiedAt)
+					} else if tagI == "" {
+						// Tag I is empty, put it after (return false)
+						return false
+					} else {
+						// Tag J is empty, put it after (i comes before j, return true)
+						return true
+					}
+				})
+				imageSummary.Scans = scans
+
+				// After sorting, use the first (newest) scan for image totals
+				if len(scans) > 0 {
+					latestScan := scans[0] // First scan is newest after sorting
+					imageSummary.LastScan = latestScan.ModifiedAt
+					imageSummary.TotalVulns = latestScan.TotalVulns
+					imageSummary.SeverityCount = make(map[string]int)
+					for k, v := range latestScan.SeverityCount {
+						imageSummary.SeverityCount[k] = v
 					}
 				}
-				imageSummary.Scans = scans
 
 				// Aggregate project totals from latest scan of each image
 				project.TotalVulns += imageSummary.TotalVulns
@@ -376,6 +400,20 @@ func main() {
 				}
 
 				project.Images = append(project.Images, *imageSummary)
+				
+				// Update project.LastScan from the latest image scan
+				if imageSummary.LastScan.After(project.LastScan) {
+					project.LastScan = imageSummary.LastScan
+				}
+			}
+
+			// Sort images by last scan date (newest first)
+			for i := 0; i < len(project.Images)-1; i++ {
+				for j := i + 1; j < len(project.Images); j++ {
+					if project.Images[i].LastScan.Before(project.Images[j].LastScan) {
+						project.Images[i], project.Images[j] = project.Images[j], project.Images[i]
+					}
+				}
 			}
 		}
 
@@ -504,19 +542,7 @@ func main() {
 			// Add scan to image
 			imageSummary.Scans = append(imageSummary.Scans, scanSummary)
 			
-			// Update image totals (use latest scan for totals)
-			if scanSummary.ModifiedAt.After(imageSummary.LastScan) {
-				imageSummary.LastScan = scanSummary.ModifiedAt
-				imageSummary.TotalVulns = scanSummary.TotalVulns
-				imageSummary.SeverityCount = make(map[string]int)
-				for k, v := range scanSummary.SeverityCount {
-					imageSummary.SeverityCount[k] = v
-				}
-			}
-
-			if scanSummary.ModifiedAt.After(project.LastScan) {
-				project.LastScan = scanSummary.ModifiedAt
-			}
+			// Don't update totals or project.LastScan here - we'll do it after sorting
 		}
 
 		// Convert map to slice and sort scans by date (newest first)
@@ -525,18 +551,51 @@ func main() {
 		project.SeverityCount = make(map[string]int)
 		
 		for _, imageSummary := range imagesMap {
-			// Sort scans by ModifiedAt (newest first)
+			// Sort scans: first by tag version (newer first), then by date (newest first) if same version
 			scans := imageSummary.Scans
-			for i := 0; i < len(scans)-1; i++ {
-				for j := i + 1; j < len(scans); j++ {
-					if scans[i].ModifiedAt.Before(scans[j].ModifiedAt) {
-						scans[i], scans[j] = scans[j], scans[i]
+			sort.Slice(scans, func(i, j int) bool {
+				tagI := scans[i].Tag
+				tagJ := scans[j].Tag
+				
+				// Compare tags as version strings (e.g., "6.7.1" > "6.6.2")
+				if tagI != "" && tagJ != "" {
+					// Both have tags, compare as version strings (newer version should be first)
+					// Use compareVersionTags: returns -1 if tagI < tagJ, 1 if tagI > tagJ, 0 if equal
+					cmp := compareVersionTags(tagI, tagJ)
+					if cmp < 0 {
+						// Tag I is older (smaller), i should come after j (return false)
+						return false
+					} else if cmp > 0 {
+						// Tag I is newer (larger), i should come before j (return true)
+						return true
+					} else {
+						// Same tag, sort by date (newest first)
+						return scans[i].ModifiedAt.After(scans[j].ModifiedAt)
 					}
+				} else if tagI == "" && tagJ == "" {
+					// Both empty, sort by date (newest first)
+					return scans[i].ModifiedAt.After(scans[j].ModifiedAt)
+				} else if tagI == "" {
+					// Tag I is empty, put it after (return false)
+					return false
+				} else {
+					// Tag J is empty, put it after (i comes before j, return true)
+					return true
 				}
-			}
+			})
 			imageSummary.Scans = scans
 			
-			// Use latest scan for image totals (already set in the loop above)
+			// After sorting, use the first (newest) scan for image totals
+			if len(scans) > 0 {
+				latestScan := scans[0] // First scan is newest after sorting
+				imageSummary.LastScan = latestScan.ModifiedAt
+				imageSummary.TotalVulns = latestScan.TotalVulns
+				imageSummary.SeverityCount = make(map[string]int)
+				for k, v := range latestScan.SeverityCount {
+					imageSummary.SeverityCount[k] = v
+				}
+			}
+			
 			// Add image totals to project totals (from latest scan only)
 			project.TotalVulns += imageSummary.TotalVulns
 			for severity, count := range imageSummary.SeverityCount {
@@ -544,6 +603,20 @@ func main() {
 			}
 			
 			project.Images = append(project.Images, *imageSummary)
+			
+			// Update project.LastScan from the latest image scan (after sorting)
+			if imageSummary.LastScan.After(project.LastScan) {
+				project.LastScan = imageSummary.LastScan
+			}
+		}
+
+		// Sort images by last scan date (newest first)
+		for i := 0; i < len(project.Images)-1; i++ {
+			for j := i + 1; j < len(project.Images); j++ {
+				if project.Images[i].LastScan.Before(project.Images[j].LastScan) {
+					project.Images[i], project.Images[j] = project.Images[j], project.Images[i]
+				}
+			}
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -774,6 +847,74 @@ func extractTimestampFromPath(relPath string, defaultTime time.Time) time.Time {
 	}
 
 	return defaultTime
+}
+
+// compareVersionTags compares two version tags (e.g., "6.7.1" vs "6.6.2")
+// Returns: -1 if tag1 < tag2, 0 if equal, 1 if tag1 > tag2
+// Handles semantic versioning properly by comparing numeric parts
+func compareVersionTags(tag1, tag2 string) int {
+	if tag1 == tag2 {
+		return 0
+	}
+	if tag1 == "" {
+		return -1 // Empty tag is considered older
+	}
+	if tag2 == "" {
+		return 1 // Empty tag is considered older
+	}
+	
+	// Remove "v" prefix if present
+	tag1 = strings.TrimPrefix(tag1, "v")
+	tag2 = strings.TrimPrefix(tag2, "v")
+	
+	// Split by dots to compare numeric parts
+	parts1 := strings.Split(tag1, ".")
+	parts2 := strings.Split(tag2, ".")
+	
+	maxLen := len(parts1)
+	if len(parts2) > maxLen {
+		maxLen = len(parts2)
+	}
+	
+	// Compare each part numerically
+	for i := 0; i < maxLen; i++ {
+		var num1, num2 int64
+		var err1, err2 error
+		
+		if i < len(parts1) {
+			// Try to parse as number, if fails treat as string
+			num1, err1 = strconv.ParseInt(parts1[i], 10, 64)
+		}
+		if i < len(parts2) {
+			num2, err2 = strconv.ParseInt(parts2[i], 10, 64)
+		}
+		
+		// Both are numbers
+		if err1 == nil && err2 == nil {
+			if num1 < num2 {
+				return -1
+			} else if num1 > num2 {
+				return 1
+			}
+		} else {
+			// At least one is not a number, do string comparison
+			str1 := ""
+			str2 := ""
+			if i < len(parts1) {
+				str1 = parts1[i]
+			}
+			if i < len(parts2) {
+				str2 = parts2[i]
+			}
+			if str1 < str2 {
+				return -1
+			} else if str1 > str2 {
+				return 1
+			}
+		}
+	}
+	
+	return 0
 }
 
 // extractProjectImageTagFromArtifactName extracts project, image, and tag from ArtifactName

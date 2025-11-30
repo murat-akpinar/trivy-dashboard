@@ -192,7 +192,7 @@ docker compose ps
 
 - [ ] **Detaylı Karşılaştırma Analizi**: İki tarama arasında hangi açıkların kapandığını/yeni eklendiğini gösterme, delta hesaplama (versiyon içi ve versiyonlar arası karşılaştırma desteği)
 - [ ] **Trend Analizi**: Son taramaya göre artış/azalış yüzdeleri, kartlarda trend göstergeleri (↑↓ okları), "Son taramaya göre %X değişti" bilgisi
-- [ ] **Versiyon Gruplama Modu**: Zaman çizelgesinde aynı imajın farklı versiyonlarını birleştirme/ayrı gösterme toggle'ı (varsayılan: birleştirilmiş, genel trend için daha kullanışlı)
+- [✅] **Versiyon Gruplama Modu**: Zaman çizelgesinde aynı imajın farklı versiyonlarını birleştirme/ayrı gösterme toggle'ı (varsayılan: birleştirilmiş, genel trend için daha kullanışlı)
 - [ ] **E-posta Bildirimleri**: Yeni CRITICAL/HIGH açıklar bulunduğunda bildirim gönderme
 - [ ] **Export/Import**: Tarama sonuçlarını yedekleme ve geri yükleme
 - [ ] **API Authentication**: Backend API'sine erişim kontrolü
