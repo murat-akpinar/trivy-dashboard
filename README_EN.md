@@ -6,6 +6,7 @@ A web dashboard application that collects and visualizes Trivy security scan res
 
 ![Dashboard](/images/dashboard.png)
 ![Project](/images/project.png)
+![Comparison](/images/comparison.png)
 
 ## Features
 
@@ -15,6 +16,7 @@ A web dashboard application that collects and visualizes Trivy security scan res
 - **Detailed Vulnerability List**: ID, description, fixed version, and detail links for each vulnerability
 - **Timeline**: Visualize how scans change over time
 - **General Dashboard**: View total statistics for all projects
+- **Detailed Comparison**: Diff view showing which vulnerabilities were closed/added between two scans
 
 ## Quick Start
 
@@ -128,6 +130,7 @@ TZ=Europe/Istanbul             # Timezone
 - `GET /api/projects/{projectName}` - Project details
 - `GET /api/scans` - List of all scans
 - `GET /api/scans/{filename}` - Scan details (vulnerability list)
+- `GET /api/compare?scan1={filename}&scan2={filename}` - Compare two scans
 
 ## Project Structure
 
@@ -190,7 +193,7 @@ docker compose ps
 
 ### Future Features
 
-- [ ] **Detailed Comparison Analysis**: Show which vulnerabilities were closed/added between two scans, delta calculations (support for both same-version and cross-version comparisons)
+- [✅] **Detailed Comparison Analysis**: Show which vulnerabilities were closed/added between two scans, delta calculations (support for both same-version and cross-version comparisons)
 - [ ] **Trend Analysis**: Percentage increase/decrease compared to last scan, trend indicators (↑↓ arrows) on cards, "Changed X% since last scan" information
 - [✅] **Version Grouping Mode**: Toggle to group/separate different versions of the same image in timeline charts (default: grouped, more useful for overall trend analysis)
 - [ ] **Email Notifications**: Send notifications when new CRITICAL/HIGH vulnerabilities are found
@@ -213,6 +216,7 @@ docker compose ps
 - ✅ Responsive design
 - ✅ Docker Compose support
 - ✅ Timeline charts
+- ✅ Detailed comparison analysis (delta between two scans, added/removed/changed vulnerabilities)
 
 ## License
 

@@ -6,6 +6,7 @@ Trivy güvenlik tarama sonuçlarını toplayıp görselleştiren web dashboard u
 
 ![Dashboard](/images/dashboard.png)
 ![Project](/images/project.png)
+![Comparison](/images/comparison.png)
 
 ## Özellikler
 
@@ -15,6 +16,7 @@ Trivy güvenlik tarama sonuçlarını toplayıp görselleştiren web dashboard u
 - **Detaylı Vulnerability Listesi**: Her açık için ID, açıklama, fixed version ve detay linkleri
 - **Zaman Çizelgesi**: Taramaların zaman içindeki değişimini görselleştirme
 - **Genel Dashboard**: Tüm projelerin toplam istatistiklerini görüntüleme
+- **Detaylı Karşılaştırma**: İki tarama arasında hangi açıkların kapandığını/yeni eklendiğini gösteren diff görünümü
 
 ## Hızlı Başlangıç
 
@@ -128,6 +130,7 @@ TZ=Europe/Istanbul             # Timezone
 - `GET /api/projects/{projectName}` - Proje detayları
 - `GET /api/scans` - Tüm taramaların listesi
 - `GET /api/scans/{filename}` - Tarama detayları (vulnerability listesi)
+- `GET /api/compare?scan1={filename}&scan2={filename}` - İki tarama arası karşılaştırma
 
 ## Proje Yapısı
 
@@ -190,7 +193,7 @@ docker compose ps
 
 ### Gelecek Özellikler
 
-- [ ] **Detaylı Karşılaştırma Analizi**: İki tarama arasında hangi açıkların kapandığını/yeni eklendiğini gösterme, delta hesaplama (versiyon içi ve versiyonlar arası karşılaştırma desteği)
+- [✅] **Detaylı Karşılaştırma Analizi**: İki tarama arasında hangi açıkların kapandığını/yeni eklendiğini gösterme, delta hesaplama (versiyon içi ve versiyonlar arası karşılaştırma desteği)
 - [ ] **Trend Analizi**: Son taramaya göre artış/azalış yüzdeleri, kartlarda trend göstergeleri (↑↓ okları), "Son taramaya göre %X değişti" bilgisi
 - [✅] **Versiyon Gruplama Modu**: Zaman çizelgesinde aynı imajın farklı versiyonlarını birleştirme/ayrı gösterme toggle'ı (varsayılan: birleştirilmiş, genel trend için daha kullanışlı)
 - [ ] **E-posta Bildirimleri**: Yeni CRITICAL/HIGH açıklar bulunduğunda bildirim gönderme
@@ -213,6 +216,7 @@ docker compose ps
 - ✅ Responsive tasarım
 - ✅ Docker Compose desteği
 - ✅ Zaman çizelgesi grafikleri
+- ✅ Detaylı karşılaştırma analizi (iki tarama arası delta, eklenen/kaldırılan/değişen açıklar)
 
 ## Lisans
 
