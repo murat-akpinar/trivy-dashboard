@@ -30,6 +30,7 @@ type ScanSummary = {
   artifactName?: string;
   projectName?: string;
   imageName?: string;
+  tag?: string;
   totalVulns: number;
   severityCount: Record<string, number>;
 };
@@ -797,8 +798,11 @@ function App() {
                                           {scanGrade.grade}
                                         </div>
                                         <div>
-                                          <p className="text-xs font-mono text-catppuccin-text">
-                                            {scan.filename}
+                                          <p className="text-sm font-semibold text-catppuccin-text">
+                                            {scan.artifactName || 
+                                             (scan.imageName 
+                                               ? `${scan.imageName}${scan.tag ? ':' + scan.tag : ''}` 
+                                               : scan.filename)}
                                           </p>
                                           <p className="text-xs text-catppuccin-overlay1 mt-0.5">
                                             {new Date(scan.modifiedAt).toLocaleString()}

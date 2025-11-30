@@ -29,6 +29,7 @@ Trivy güvenlik tarama sonuçlarını toplayıp görselleştiren bir web dashboa
 - **Detaylı Vulnerability Listesi**: Her vulnerability için ID, açıklama, fixed version ve detay linkleri
 - **Genel Dashboard**: Tüm projelerin toplam istatistiklerini görüntüleme
 - **Arama Özelliği**: Proje listesinde arama yapma
+- **Okunabilir Tarama Gösterimi**: Tarama geçmişinde dosya adı yerine imaj adı ve tag bilgisi gösterilir (örn: `backend:latest`)
 - **Docker Compose Desteği**: Tek komutla çalıştırma
 - **Catppuccin Mocha Tema**: Modern ve göz yormayan dark theme
 - **Cascadia Mono Font**: Monospace font desteği
@@ -183,6 +184,7 @@ Backend artık JSON dosyasının içindeki `ArtifactName` alanından proje, imaj
 - ✅ Tag bilgisi otomatik olarak yakalanır
 - ✅ JSON içindeki gerçek veriyi kullanır (daha güvenilir)
 - ✅ Eğer `ArtifactName` parse edilemezse, dosya adından fallback yapar (geriye uyumlu)
+- ✅ Dashboard'da tarama geçmişinde dosya adı yerine imaj adı ve tag gösterilir (daha okunabilir)
 
 **Dosya adı örnekleri (organizasyon için):**
 - `export/git-effort/backend-latest-20251126-215219.json`
@@ -332,6 +334,7 @@ trivy-dashboard/
 
 - **İmaj Listesi**: Projenin tüm imajları (backend, frontend, vs.)
 - **Tarama Özetleri**: Her imaj için son tarama tarihi ve açık sayıları
+- **Tarama Geçmişi**: Her imaj için tüm taramaların geçmişi (imaj adı ve tag ile gösterilir, dosya adı yerine)
 - **Vulnerability Detayları**: "Açıkları Görüntüle" butonu ile detaylı liste
 - **Harf Notu Sistemi**: Her imaj için otomatik güvenlik notu (A, B, C, D)
 
@@ -377,6 +380,7 @@ Dashboard, her imaj için severity sayılarına göre otomatik olarak bir harf n
 - ✅ Severity filtreleme
 - ✅ Harf notu sistemi (A, B, C, D)
 - ✅ Zaman damgası ile çoklu tarama desteği
+- ✅ Okunabilir tarama gösterimi (imaj adı ve tag, dosya adı yerine)
 - ✅ Catppuccin Mocha tema
 - ✅ Responsive tasarım
 - ✅ Docker Compose desteği
