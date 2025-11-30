@@ -173,6 +173,57 @@ function App() {
   const [comparisonError, setComparisonError] = useState<string | null>(null);
   const [comparisonTab, setComparisonTab] = useState<'summary' | 'added' | 'removed' | 'changed'>('summary');
 
+  // Handle URL-based routing and 404 detection
+  useEffect(() => {
+    const path = window.location.pathname;
+    
+    // Skip API routes - they're handled by backend
+    if (path.startsWith('/api/') || path === '/index.html') {
+      return;
+    }
+    
+    // Parse URL and set appropriate page
+    if (path === '/' || path === '') {
+      setCurrentPage('dashboard');
+    } else if (path === '/projects') {
+      setCurrentPage('projects');
+    } else if (path.startsWith('/projects/')) {
+      // This would be for project detail pages, but we don't have URL-based routing for that yet
+      // For now, show 404 for specific project URLs
+      setCurrentPage('not-found');
+    } else {
+      // Any other path is invalid - show 404
+      setCurrentPage('not-found');
+    }
+    
+    // Listen for browser back/forward buttons
+    const handlePopState = () => {
+      const newPath = window.location.pathname;
+      if (newPath === '/' || newPath === '') {
+        setCurrentPage('dashboard');
+      } else if (newPath === '/projects') {
+        setCurrentPage('projects');
+      } else if (!newPath.startsWith('/api/') && newPath !== '/index.html') {
+        setCurrentPage('not-found');
+      }
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+  
+  // Update URL when page changes (for bookmarking/sharing)
+  useEffect(() => {
+    if (currentPage === 'dashboard') {
+      if (window.location.pathname !== '/') {
+        window.history.pushState({}, '', '/');
+      }
+    } else if (currentPage === 'projects') {
+      if (window.location.pathname !== '/projects') {
+        window.history.pushState({}, '', '/projects');
+      }
+    }
+  }, [currentPage]);
 
   useEffect(() => {
     if (!API_BASE) return;
