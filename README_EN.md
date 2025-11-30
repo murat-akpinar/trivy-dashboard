@@ -190,15 +190,16 @@ docker compose ps
 
 ### Future Features
 
-- [ ] **Time Series Analysis**: Compare scans from different times for the same image
-- [ ] **Trend Charts**: Visualize how vulnerability counts change over time
+- [ ] **Detailed Comparison Analysis**: Show which vulnerabilities were closed/added between two scans, delta calculations (support for both same-version and cross-version comparisons)
+- [ ] **Trend Analysis**: Percentage increase/decrease compared to last scan, trend indicators (↑↓ arrows) on cards, "Changed X% since last scan" information
+- [ ] **Version Grouping Mode**: Toggle to group/separate different versions of the same image in timeline charts (default: grouped, more useful for overall trend analysis)
 - [ ] **Email Notifications**: Send notifications when new CRITICAL/HIGH vulnerabilities are found
 - [ ] **Export/Import**: Backup and restore scan results
 - [ ] **API Authentication**: Access control for backend API
 - [ ] **Database Integration**: Store scan history with SQLite/PostgreSQL
 - [ ] **Webhook Support**: Automatically trigger scans from CI/CD pipelines
 - [ ] **Advanced Filtering and Sorting**: Enhanced filtering in vulnerability lists
-- [ ] **Comparison Mode**: Compare two scan results side by side
+- [ ] **Side-by-Side Comparison Mode**: Display two scan results in detailed side-by-side view
 - [ ] **Automatic Cleanup**: Automatically delete old scan files (retention policy)
 
 ### Current Features

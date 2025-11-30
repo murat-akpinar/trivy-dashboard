@@ -190,15 +190,16 @@ docker compose ps
 
 ### Gelecek Özellikler
 
-- [ ] **Zaman Serisi Analizi**: Aynı imaj için farklı zamanlardaki taramaları karşılaştırma
-- [ ] **Trend Grafikleri**: Vulnerability sayılarının zaman içindeki değişimini görselleştirme
+- [ ] **Detaylı Karşılaştırma Analizi**: İki tarama arasında hangi açıkların kapandığını/yeni eklendiğini gösterme, delta hesaplama (versiyon içi ve versiyonlar arası karşılaştırma desteği)
+- [ ] **Trend Analizi**: Son taramaya göre artış/azalış yüzdeleri, kartlarda trend göstergeleri (↑↓ okları), "Son taramaya göre %X değişti" bilgisi
+- [ ] **Versiyon Gruplama Modu**: Zaman çizelgesinde aynı imajın farklı versiyonlarını birleştirme/ayrı gösterme toggle'ı (varsayılan: birleştirilmiş, genel trend için daha kullanışlı)
 - [ ] **E-posta Bildirimleri**: Yeni CRITICAL/HIGH açıklar bulunduğunda bildirim gönderme
 - [ ] **Export/Import**: Tarama sonuçlarını yedekleme ve geri yükleme
 - [ ] **API Authentication**: Backend API'sine erişim kontrolü
 - [ ] **Database Entegrasyonu**: SQLite/PostgreSQL ile tarama geçmişini saklama
 - [ ] **Webhook Desteği**: CI/CD pipeline'lardan otomatik tarama tetikleme
 - [ ] **Filtreleme ve Sıralama**: Vulnerability listesinde gelişmiş filtreleme
-- [ ] **Karşılaştırma Modu**: İki tarama sonucunu yan yana karşılaştırma
+- [ ] **Yan Yana Karşılaştırma Modu**: İki tarama sonucunu detaylı olarak yan yana gösterme
 - [ ] **Otomatik Temizlik**: Eski tarama dosyalarını otomatik silme (retention policy)
 
 ### Mevcut Özellikler

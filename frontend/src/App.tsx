@@ -133,6 +133,7 @@ function App() {
   const [imageVulnDetails, setImageVulnDetails] = useState<Record<string, Vulnerability[]>>({});
   const [loadingImageDetails, setLoadingImageDetails] = useState<Record<string, boolean>>({});
   const [allScans, setAllScans] = useState<ScanSummary[]>([]);
+  const [separateVersions, setSeparateVersions] = useState<boolean>(false); // Varsayılan: tag'siz grupla
 
   useEffect(() => {
     if (!API_BASE) return;
@@ -364,14 +365,19 @@ function App() {
   // Prepare unified timeline chart data
   // Her satır "Proje - İmaj" ikilisi olacak şekilde ayrıştırılır,
   // her tarama ayrı bir nokta olarak gösterilir (iniş/çıkışları görebilmek için).
+  // separateVersions false ise tag'siz grupla (varsayılan), true ise tag ile ayrı göster
   const unifiedTimelineData = useMemo(() => {
-    // Get unique series names (project-image)
+    // Get unique series names (project-image veya project-image:tag)
     const seriesNames = Array.from(
       new Set(
         allScans
           .filter((s) => s.projectName)
           .map((s) => {
             if (s.imageName) {
+              // separateVersions true ise tag'ı da ekle (ama imageName zaten tag ise ekleme)
+              if (separateVersions && s.tag && s.tag !== s.imageName) {
+                return `${s.projectName} - ${s.imageName}:${s.tag}`;
+              }
               return `${s.projectName} - ${s.imageName}`;
             }
             return s.projectName as string;
@@ -404,8 +410,11 @@ function App() {
     sortedScans.forEach((scan) => {
       if (!scan.projectName) return;
 
+      // separateVersions true ise tag'ı da ekle (ama imageName zaten tag ise ekleme)
       const seriesKey = scan.imageName
-        ? `${scan.projectName} - ${scan.imageName}`
+        ? separateVersions && scan.tag && scan.tag !== scan.imageName
+          ? `${scan.projectName} - ${scan.imageName}:${scan.tag}`
+          : `${scan.projectName} - ${scan.imageName}`
         : (scan.projectName as string);
 
       const d = new Date(scan.modifiedAt);
@@ -437,7 +446,7 @@ function App() {
       .map(([, value]) => value);
 
     return { data, projectNames: seriesNames, projectColors };
-  }, [allScans]);
+  }, [allScans, separateVersions]);
 
   // Project-specific timeline data (only for selected project on detail page)
   const projectTimelineData = useMemo(() => {
@@ -452,9 +461,16 @@ function App() {
 
     const seriesNames = Array.from(
       new Set(
-        projectScans.map((s) =>
-          s.imageName ? `${s.projectName} - ${s.imageName}` : (s.projectName as string)
-        )
+        projectScans.map((s) => {
+          if (s.imageName) {
+            // separateVersions true ise tag'ı da ekle (ama imageName zaten tag ise ekleme)
+            if (separateVersions && s.tag && s.tag !== s.imageName) {
+              return `${s.projectName} - ${s.imageName}:${s.tag}`;
+            }
+            return `${s.projectName} - ${s.imageName}`;
+          }
+          return s.projectName as string;
+        })
       )
     );
 
@@ -466,8 +482,11 @@ function App() {
     const dataMap = new Map<string, Record<string, string | number | null>>();
 
     sortedScans.forEach((scan) => {
+      // separateVersions true ise tag'ı da ekle (ama imageName zaten tag ise ekleme)
       const seriesKey = scan.imageName
-        ? `${scan.projectName} - ${scan.imageName}`
+        ? separateVersions && scan.tag && scan.tag !== scan.imageName
+          ? `${scan.projectName} - ${scan.imageName}:${scan.tag}`
+          : `${scan.projectName} - ${scan.imageName}`
         : (scan.projectName as string);
 
       const d = new Date(scan.modifiedAt);
@@ -499,7 +518,7 @@ function App() {
       .map(([, value]) => value);
 
     return { data, seriesNames };
-  }, [allScans, selectedProject]);
+  }, [allScans, selectedProject, separateVersions]);
 
   if (currentPage === 'project-detail' && projectDetails) {
     return (
@@ -577,9 +596,18 @@ function App() {
 
           {/* Project-specific timeline chart */}
           <section className="rounded-xl border border-catppuccin-surface0 bg-catppuccin-mantle/60 p-4">
-            <h2 className="text-sm font-semibold text-catppuccin-text mb-4">
-              {projectDetails.projectName} – Açık Sayısı Zaman Çizelgesi
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-catppuccin-text">
+                {projectDetails.projectName} – Açık Sayısı Zaman Çizelgesi
+              </h2>
+              <button
+                onClick={() => setSeparateVersions(!separateVersions)}
+                className="text-xs px-3 py-1.5 rounded border border-catppuccin-surface1 hover:bg-catppuccin-surface0 text-catppuccin-subtext0 transition-colors"
+                title={separateVersions ? 'Versiyonları birleştir (genel trend)' : 'Versiyonları ayrı göster'}
+              >
+                {separateVersions ? '📊 Birleştirilmiş' : '🔀 Versiyonları Ayrı'}
+              </button>
+            </div>
             {projectTimelineData.data.length > 0 ? (
               <>
                 <ResponsiveContainer width="100%" height={260}>
@@ -1244,9 +1272,18 @@ function App() {
 
           {/* Unified Timeline Chart - All Projects */}
           <div className="rounded-xl border border-catppuccin-surface0 bg-catppuccin-mantle/60 p-4">
-            <h2 className="text-sm font-semibold text-catppuccin-text mb-4">
-              Tüm Projeler - Günlük Açık Sayısı Zaman Çizelgesi
-            </h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-sm font-semibold text-catppuccin-text">
+                Tüm Projeler - Günlük Açık Sayısı Zaman Çizelgesi
+              </h2>
+              <button
+                onClick={() => setSeparateVersions(!separateVersions)}
+                className="text-xs px-3 py-1.5 rounded border border-catppuccin-surface1 hover:bg-catppuccin-surface0 text-catppuccin-subtext0 transition-colors"
+                title={separateVersions ? 'Versiyonları birleştir (genel trend)' : 'Versiyonları ayrı göster'}
+              >
+                {separateVersions ? '📊 Birleştirilmiş' : '🔀 Versiyonları Ayrı'}
+              </button>
+            </div>
             {unifiedTimelineData.data.length > 0 ? (
               <>
                 <ResponsiveContainer width="100%" height={300}>

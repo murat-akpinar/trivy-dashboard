@@ -211,7 +211,12 @@ func main() {
 			}
 
 			// Fallback to filename parsing if ArtifactName parsing failed
-			if projectName == "" || imageName == "" {
+			// But only if we got projectName from ArtifactName but no imageName (shouldn't happen with new logic)
+			if projectName != "" && imageName == "" {
+				// This shouldn't happen now, but keep for safety
+				projectName, imageName = extractProjectAndImageFromPath(relPath, exportDir)
+			} else if projectName == "" {
+				// If ArtifactName parsing completely failed, try filename
 				projectName, imageName = extractProjectAndImageFromPath(relPath, exportDir)
 			}
 
@@ -291,7 +296,12 @@ func main() {
 			}
 
 			// Fallback to filename parsing if ArtifactName parsing failed
-			if projectName == "" || imageName == "" {
+			// But only if we got projectName from ArtifactName but no imageName (shouldn't happen with new logic)
+			if projectName != "" && imageName == "" {
+				// This shouldn't happen now, but keep for safety
+				projectName, imageName = extractProjectAndImageFromPath(relPath, exportDir)
+			} else if projectName == "" {
+				// If ArtifactName parsing completely failed, try filename
 				projectName, imageName = extractProjectAndImageFromPath(relPath, exportDir)
 			}
 			
@@ -458,7 +468,11 @@ func main() {
 			}
 
 			// Fallback to filename parsing if ArtifactName parsing failed
-			if fileProjectName == "" || imageName == "" {
+			if fileProjectName != "" && imageName == "" {
+				// Got projectName from ArtifactName but no imageName (shouldn't happen with new logic)
+				fileProjectName, imageName = extractProjectAndImageFromPath(relPath, exportDir)
+			} else if fileProjectName == "" {
+				// If ArtifactName parsing completely failed, try filename
 				fileProjectName, imageName = extractProjectAndImageFromPath(relPath, exportDir)
 			}
 
@@ -796,8 +810,9 @@ func extractProjectImageTagFromArtifactName(artifactName string) (projectName, i
 	// Format: {project-name}-{image-name}
 	lastDash := strings.LastIndex(namePart, "-")
 	if lastDash == -1 || lastDash == 0 || lastDash == len(namePart)-1 {
-		// No dash found, or dash at start/end - treat whole name as project
-		return namePart, "", tag
+		// No dash found, or dash at start/end - treat whole name as both project and image
+		// This handles cases like "wordpress:6.6.2" where imageName should be "wordpress", not empty
+		return namePart, namePart, tag
 	}
 
 	projectName = namePart[:lastDash]
