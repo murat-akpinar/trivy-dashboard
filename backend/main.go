@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -88,6 +89,43 @@ type Vulnerability struct {
 	PublishedDate    string                 `json:"PublishedDate,omitempty"`
 	LastModifiedDate string                 `json:"LastModifiedDate,omitempty"`
 	CVSS             map[string]interface{} `json:"CVSS,omitempty"`
+}
+
+// Comparison structures
+type ComparisonResult struct {
+	Scan1    ScanComparisonInfo   `json:"scan1"`
+	Scan2    ScanComparisonInfo   `json:"scan2"`
+	Summary  ComparisonSummary    `json:"summary"`
+	Added    []Vulnerability      `json:"added"`
+	Removed  []Vulnerability      `json:"removed"`
+	Changed  []ChangedVulnerability `json:"changed"`
+}
+
+type ScanComparisonInfo struct {
+	Filename     string    `json:"filename"`
+	ArtifactName string    `json:"artifactName"`
+	TotalVulns   int       `json:"totalVulns"`
+	ScanDate     time.Time `json:"scanDate"`
+}
+
+type ComparisonSummary struct {
+	Added     int `json:"added"`
+	Removed   int `json:"removed"`
+	Changed   int `json:"changed"`
+	Unchanged int `json:"unchanged"`
+}
+
+type ChangedVulnerability struct {
+	VulnerabilityID   string                 `json:"VulnerabilityID"`
+	PkgName           string                 `json:"PkgName"`
+	InstalledVersion  string                 `json:"InstalledVersion"`
+	Changes           map[string]FieldChange `json:"changes"`
+	Current           Vulnerability          `json:"current"`
+}
+
+type FieldChange struct {
+	Old string `json:"old"`
+	New string `json:"new"`
 }
 
 func main() {
@@ -690,6 +728,57 @@ func main() {
 		}
 	})
 
+	// Compare two scans
+	r.Get("/api/compare", func(w http.ResponseWriter, r *http.Request) {
+		scan1Filename := r.URL.Query().Get("scan1")
+		scan2Filename := r.URL.Query().Get("scan2")
+		
+		if scan1Filename == "" || scan2Filename == "" {
+			http.Error(w, "scan1 and scan2 parameters are required", http.StatusBadRequest)
+			return
+		}
+
+		exportDir := os.Getenv("EXPORT_DIR")
+		if exportDir == "" {
+			exportDir = "/app/export"
+		}
+
+		// Security: prevent path traversal
+		if strings.Contains(scan1Filename, "..") || strings.Contains(scan2Filename, "..") {
+			http.Error(w, "invalid filename", http.StatusBadRequest)
+			return
+		}
+
+		scan1Path := filepath.Join(exportDir, scan1Filename)
+		scan2Path := filepath.Join(exportDir, scan2Filename)
+		
+		scan1Path = filepath.Clean(scan1Path)
+		scan2Path = filepath.Clean(scan2Path)
+
+		// Ensure files are within exportDir
+		cleanExportDir := filepath.Clean(exportDir)
+		if !strings.HasPrefix(scan1Path, cleanExportDir+string(os.PathSeparator)) && scan1Path != cleanExportDir {
+			http.Error(w, "invalid filename", http.StatusBadRequest)
+			return
+		}
+		if !strings.HasPrefix(scan2Path, cleanExportDir+string(os.PathSeparator)) && scan2Path != cleanExportDir {
+			http.Error(w, "invalid filename", http.StatusBadRequest)
+			return
+		}
+
+		comparison, err := compareScans(scan1Path, scan2Path, scan1Filename, scan2Filename)
+		if err != nil {
+			http.Error(w, "failed to compare scans: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(comparison); err != nil {
+			http.Error(w, "failed to encode response", http.StatusInternalServerError)
+			return
+		}
+	})
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -719,6 +808,159 @@ func parseTrivyJSON(filePath string) (*TrivyReport, error) {
 	}
 
 	return &report, nil
+}
+
+// getVulnKey creates a unique key for a vulnerability
+func getVulnKey(vuln Vulnerability) string {
+	return fmt.Sprintf("%s|%s|%s", vuln.VulnerabilityID, vuln.PkgName, vuln.InstalledVersion)
+}
+
+// hasChanges checks if two vulnerabilities have differences
+func hasChanges(v1, v2 Vulnerability) bool {
+	return v1.Severity != v2.Severity ||
+		v1.FixedVersion != v2.FixedVersion ||
+		v1.Title != v2.Title ||
+		v1.Description != v2.Description
+}
+
+// createChangedVuln creates a ChangedVulnerability from two vulnerabilities
+func createChangedVuln(oldVuln, newVuln Vulnerability) ChangedVulnerability {
+	changes := make(map[string]FieldChange)
+
+	if oldVuln.Severity != newVuln.Severity {
+		changes["severity"] = FieldChange{
+			Old: oldVuln.Severity,
+			New: newVuln.Severity,
+		}
+	}
+
+	if oldVuln.FixedVersion != newVuln.FixedVersion {
+		changes["fixedVersion"] = FieldChange{
+			Old: oldVuln.FixedVersion,
+			New: newVuln.FixedVersion,
+		}
+	}
+
+	if oldVuln.Title != newVuln.Title {
+		changes["title"] = FieldChange{
+			Old: oldVuln.Title,
+			New: newVuln.Title,
+		}
+	}
+
+	if oldVuln.Description != newVuln.Description {
+		changes["description"] = FieldChange{
+			Old: oldVuln.Description,
+			New: newVuln.Description,
+		}
+	}
+
+	return ChangedVulnerability{
+		VulnerabilityID:  newVuln.VulnerabilityID,
+		PkgName:          newVuln.PkgName,
+		InstalledVersion: newVuln.InstalledVersion,
+		Changes:          changes,
+		Current:          newVuln,
+	}
+}
+
+// compareScans compares two scan files and returns comparison results
+func compareScans(scan1Path, scan2Path, scan1Filename, scan2Filename string) (ComparisonResult, error) {
+	report1, err := parseTrivyJSON(scan1Path)
+	if err != nil {
+		return ComparisonResult{}, err
+	}
+
+	report2, err := parseTrivyJSON(scan2Path)
+	if err != nil {
+		return ComparisonResult{}, err
+	}
+
+	// Get scan dates
+	info1, err := os.Stat(scan1Path)
+	var scanDate1 time.Time
+	if err == nil {
+		scanDate1 = extractTimestampFromPath(filepath.Base(scan1Filename), info1.ModTime())
+	}
+
+	info2, err := os.Stat(scan2Path)
+	var scanDate2 time.Time
+	if err == nil {
+		scanDate2 = extractTimestampFromPath(filepath.Base(scan2Filename), info2.ModTime())
+	}
+
+	// Build vulnerability maps
+	vulns1 := make(map[string]Vulnerability)
+	vulns2 := make(map[string]Vulnerability)
+
+	for _, result := range report1.Results {
+		for _, vuln := range result.Vulnerabilities {
+			key := getVulnKey(vuln)
+			vulns1[key] = vuln
+		}
+	}
+
+	for _, result := range report2.Results {
+		for _, vuln := range result.Vulnerabilities {
+			key := getVulnKey(vuln)
+			vulns2[key] = vuln
+		}
+	}
+
+	// Compare
+	var added []Vulnerability
+	var removed []Vulnerability
+	var changed []ChangedVulnerability
+	var unchanged []Vulnerability
+
+	// Find added (in scan2 but not in scan1)
+	for key, vuln := range vulns2 {
+		if _, exists := vulns1[key]; !exists {
+			added = append(added, vuln)
+		}
+	}
+
+	// Find removed (in scan1 but not in scan2)
+	for key, vuln := range vulns1 {
+		if _, exists := vulns2[key]; !exists {
+			removed = append(removed, vuln)
+		}
+	}
+
+	// Find changed and unchanged (in both)
+	for key, vuln1 := range vulns1 {
+		if vuln2, exists := vulns2[key]; exists {
+			if hasChanges(vuln1, vuln2) {
+				changed = append(changed, createChangedVuln(vuln1, vuln2))
+			} else {
+				unchanged = append(unchanged, vuln2)
+			}
+		}
+	}
+
+	return ComparisonResult{
+		Scan1: ScanComparisonInfo{
+			Filename:     scan1Filename,
+			ArtifactName: report1.ArtifactName,
+			TotalVulns:   len(vulns1),
+			ScanDate:     scanDate1,
+		},
+		Scan2: ScanComparisonInfo{
+			Filename:     scan2Filename,
+			ArtifactName: report2.ArtifactName,
+			TotalVulns:   len(vulns2),
+			ScanDate:     scanDate2,
+		},
+		Summary: ComparisonSummary{
+			Added:     len(added),
+			Removed:   len(removed),
+			Changed:   len(changed),
+			Unchanged: len(unchanged),
+		},
+		Added:    added,
+		Removed:  removed,
+		Changed:  changed,
+	}, nil
 }
 
 // extractProjectAndImageFromPath extracts project and image name from file path

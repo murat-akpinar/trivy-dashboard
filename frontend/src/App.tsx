@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import {
   PieChart,
   Pie,
@@ -52,6 +53,36 @@ type Vulnerability = {
   Title: string;
   Description: string;
   PrimaryURL?: string;
+};
+
+type ComparisonResult = {
+  scan1: {
+    filename: string;
+    artifactName: string;
+    totalVulns: number;
+    scanDate: string;
+  };
+  scan2: {
+    filename: string;
+    artifactName: string;
+    totalVulns: number;
+    scanDate: string;
+  };
+  summary: {
+    added: number;
+    removed: number;
+    changed: number;
+    unchanged: number;
+  };
+  added: Vulnerability[];
+  removed: Vulnerability[];
+  changed: {
+    VulnerabilityID: string;
+    PkgName: string;
+    InstalledVersion: string;
+    changes: Record<string, { old: string; new: string }>;
+    current: Vulnerability;
+  }[];
 };
 
 const API_BASE =
@@ -134,6 +165,13 @@ function App() {
   const [loadingImageDetails, setLoadingImageDetails] = useState<Record<string, boolean>>({});
   const [allScans, setAllScans] = useState<ScanSummary[]>([]);
   const [separateVersions, setSeparateVersions] = useState<boolean>(false); // Varsayılan: tag'siz grupla
+  const [showComparisonPage, setShowComparisonPage] = useState(false);
+  const [comparisonData, setComparisonData] = useState<ComparisonResult | null>(null);
+  const [selectedScan1, setSelectedScan1] = useState<string>('');
+  const [selectedScan2, setSelectedScan2] = useState<string>('');
+  const [comparisonLoading, setComparisonLoading] = useState(false);
+  const [comparisonTab, setComparisonTab] = useState<'summary' | 'added' | 'removed' | 'changed'>('summary');
+
 
   useEffect(() => {
     if (!API_BASE) return;
@@ -212,6 +250,28 @@ function App() {
       })
       .finally(() => setLoadingDetails(false));
   }, [selectedFilename]);
+
+  // Compare scans function
+  const compareScans = async () => {
+    if (!selectedScan1 || !selectedScan2 || !API_BASE) return;
+    setComparisonLoading(true);
+    try {
+      const response = await fetch(
+        `${API_BASE}/api/compare?scan1=${encodeURIComponent(selectedScan1)}&scan2=${encodeURIComponent(selectedScan2)}`
+      );
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      const data: ComparisonResult = await response.json();
+      setComparisonData(data);
+      setComparisonTab('summary');
+    } catch (error) {
+      console.error('Comparison failed:', error);
+      setComparisonData(null);
+    } finally {
+      setComparisonLoading(false);
+    }
+  };
 
   // Load vulnerabilities for expanded scans (only for .json filenames)
   useEffect(() => {
@@ -519,6 +579,176 @@ function App() {
 
     return { data, seriesNames };
   }, [allScans, selectedProject, separateVersions]);
+
+  // Karşılaştırma Sayfası
+  if (showComparisonPage) {
+    return (
+      <div className="min-h-screen bg-catppuccin-base text-catppuccin-text">
+        <header className="border-b border-catppuccin-surface0 bg-catppuccin-mantle/70 backdrop-blur">
+          <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-sm">
+                <button
+                  onClick={() => {
+                    setCurrentPage('dashboard');
+                    setSelectedProject(null);
+                    setShowComparisonPage(false);
+                    setComparisonData(null);
+                    setSelectedScan1('');
+                    setSelectedScan2('');
+                  }}
+                  className="px-3 py-1.5 rounded border border-catppuccin-surface1 hover:bg-catppuccin-surface0 hover:border-catppuccin-teal text-catppuccin-text transition-colors font-medium"
+                >
+                  Ana Sayfa
+                </button>
+                <span className="text-catppuccin-overlay1">/</span>
+                <span className="px-3 py-1.5 rounded bg-catppuccin-teal/10 text-catppuccin-teal font-semibold">
+                  Scan Karşılaştırma
+                </span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-6xl px-4 py-6 space-y-6">
+          {/* Scan Selection */}
+          <section className="bg-catppuccin-mantle/60 border border-catppuccin-surface0 rounded-xl p-6">
+            <h2 className="text-xl font-semibold text-catppuccin-text mb-4">Tarama Seçimi</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-catppuccin-text mb-2">
+                  Scan 1 (İlk Scan / Eski)
+                </label>
+                <select
+                  value={selectedScan1}
+                  onChange={(e) => setSelectedScan1(e.target.value)}
+                  className="w-full px-3 py-2 bg-catppuccin-base border border-catppuccin-surface0 rounded text-catppuccin-text"
+                >
+                  <option value="">Scan seçin...</option>
+                  {allScans.map((scan) => (
+                    <option key={scan.filename} value={scan.filename}>
+                      {scan.artifactName || 
+                       (scan.imageName 
+                         ? `${scan.imageName}${scan.tag ? ':' + scan.tag : ''}` 
+                         : scan.filename)} - {new Date(scan.modifiedAt).toLocaleString()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-catppuccin-text mb-2">
+                  Scan 2 (İkinci Scan / Yeni)
+                </label>
+                <select
+                  value={selectedScan2}
+                  onChange={(e) => setSelectedScan2(e.target.value)}
+                  className="w-full px-3 py-2 bg-catppuccin-base border border-catppuccin-surface0 rounded text-catppuccin-text"
+                >
+                  <option value="">Scan seçin...</option>
+                  {allScans
+                    .filter(scan => scan.filename !== selectedScan1)
+                    .map((scan) => (
+                    <option key={scan.filename} value={scan.filename}>
+                      {scan.artifactName || 
+                       (scan.imageName 
+                         ? `${scan.imageName}${scan.tag ? ':' + scan.tag : ''}` 
+                         : scan.filename)} - {new Date(scan.modifiedAt).toLocaleString()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                onClick={compareScans}
+                disabled={!selectedScan1 || !selectedScan2 || comparisonLoading}
+                className="w-full px-4 py-2 bg-catppuccin-blue text-catppuccin-base rounded hover:bg-catppuccin-sapphire disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              >
+                {comparisonLoading ? 'Karşılaştırılıyor...' : 'Karşılaştır'}
+              </button>
+            </div>
+          </section>
+
+          {/* Comparison Results */}
+          {comparisonData && (
+            <section className="space-y-6">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-4 gap-4">
+                <div className="bg-catppuccin-green/20 border border-catppuccin-green/30 rounded-lg p-4">
+                  <div className="text-2xl font-bold text-catppuccin-green">+{comparisonData.summary.added}</div>
+                  <div className="text-xs text-catppuccin-overlay1 mt-1">Yeni Eklenen</div>
+                </div>
+                <div className="bg-catppuccin-red/20 border border-catppuccin-red/30 rounded-lg p-4">
+                  <div className="text-2xl font-bold text-catppuccin-red">-{comparisonData.summary.removed}</div>
+                  <div className="text-xs text-catppuccin-overlay1 mt-1">Kapatılan</div>
+                </div>
+                <div className="bg-catppuccin-yellow/20 border border-catppuccin-yellow/30 rounded-lg p-4">
+                  <div className="text-2xl font-bold text-catppuccin-yellow">~{comparisonData.summary.changed}</div>
+                  <div className="text-xs text-catppuccin-overlay1 mt-1">Değişen</div>
+                </div>
+                <div className="bg-catppuccin-surface0 border border-catppuccin-surface1 rounded-lg p-4">
+                  <div className="text-2xl font-bold text-catppuccin-text">={comparisonData.summary.unchanged}</div>
+                  <div className="text-xs text-catppuccin-overlay1 mt-1">Değişmeyen</div>
+                </div>
+              </div>
+
+              {/* Diff/Meld Style View - Sağ Sol Karşılaştırma */}
+              <div className="bg-catppuccin-mantle/60 border border-catppuccin-surface0 rounded-xl p-6">
+                <h2 className="text-xl font-semibold text-catppuccin-text mb-4">Karşılaştırma Detayları (Diff/Meld Görünümü)</h2>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Left: Scan 1 (Removed - Red) */}
+                  <div className="border border-catppuccin-red/30 rounded-lg p-4 bg-catppuccin-red/5">
+                    <div className="text-sm font-semibold text-catppuccin-red mb-3">
+                      Scan 1 - Kaldırılanlar ({comparisonData.summary.removed})
+                    </div>
+                    <div className="text-xs text-catppuccin-overlay1 mb-2">
+                      {comparisonData.scan1.artifactName} - {new Date(comparisonData.scan1.scanDate).toLocaleString()}
+                    </div>
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {comparisonData.removed.map((vuln, idx) => (
+                        <div key={idx} className="bg-catppuccin-red/10 border-l-4 border-catppuccin-red p-2 rounded">
+                          <div className="text-xs font-mono text-catppuccin-teal">{vuln.VulnerabilityID}</div>
+                          <div className="text-xs text-catppuccin-text mt-1">{vuln.Title || vuln.VulnerabilityID}</div>
+                          <div className="text-xs text-catppuccin-overlay1 mt-1">
+                            {vuln.PkgName} {vuln.InstalledVersion}
+                          </div>
+                        </div>
+                      ))}
+                      {comparisonData.removed.length === 0 && (
+                        <div className="text-xs text-catppuccin-overlay1 text-center py-4">Kaldırılan vulnerability yok</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right: Scan 2 (Added - Green) */}
+                  <div className="border border-catppuccin-green/30 rounded-lg p-4 bg-catppuccin-green/5">
+                    <div className="text-sm font-semibold text-catppuccin-green mb-3">
+                      Scan 2 - Yeni Eklenenler ({comparisonData.summary.added})
+                    </div>
+                    <div className="text-xs text-catppuccin-overlay1 mb-2">
+                      {comparisonData.scan2.artifactName} - {new Date(comparisonData.scan2.scanDate).toLocaleString()}
+                    </div>
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {comparisonData.added.map((vuln, idx) => (
+                        <div key={idx} className="bg-catppuccin-green/10 border-l-4 border-catppuccin-green p-2 rounded">
+                          <div className="text-xs font-mono text-catppuccin-teal">{vuln.VulnerabilityID}</div>
+                          <div className="text-xs text-catppuccin-text mt-1">{vuln.Title || vuln.VulnerabilityID}</div>
+                          <div className="text-xs text-catppuccin-overlay1 mt-1">
+                            {vuln.PkgName} {vuln.InstalledVersion}
+                          </div>
+                        </div>
+                      ))}
+                      {comparisonData.added.length === 0 && (
+                        <div className="text-xs text-catppuccin-overlay1 text-center py-4">Yeni eklenen vulnerability yok</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+        </main>
+      </div>
+    );
+  }
 
   // Show loading or project detail page
   if (currentPage === 'project-detail') {
@@ -863,6 +1093,23 @@ function App() {
                                           <p className="text-xs text-catppuccin-overlay1 mt-0.5">
                                             {new Date(scan.modifiedAt).toLocaleString()}
                                           </p>
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.preventDefault();
+                                              e.stopPropagation();
+                                              console.log('Compare button clicked', scan.filename);
+                                              setSelectedScan1(scan.filename);
+                                              setSelectedScan2('');
+                                              setComparisonData(null);
+                                              setShowComparisonPage(true);
+                                              setSelectedProject(null);
+                                            }}
+                                            className="text-xs text-catppuccin-blue hover:text-catppuccin-sapphire mt-1 underline cursor-pointer relative z-10 bg-transparent border-none p-0"
+                                            style={{ position: 'relative', zIndex: 10 }}
+                                          >
+                                            Karşılaştır
+                                          </button>
                                         </div>
                                       </div>
                                       <div className="flex items-center gap-4 text-xs">
@@ -1513,6 +1760,357 @@ function App() {
           </section>
         )}
       </main>
+
+      {/* Comparison Modal - REMOVED, now using separate page */}
+      {false && (
+        <div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4" 
+          style={{ 
+            zIndex: 99999, 
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: '100vw',
+            height: '100vh'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowComparison(false);
+            }
+          }}
+        >
+            <div 
+              className="bg-catppuccin-base border-2 border-catppuccin-red rounded-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+              onClick={(e) => {
+                e.stopPropagation();
+                console.log('Modal content clicked');
+              }}
+              style={{ 
+                position: 'relative', 
+                zIndex: 100000,
+                backgroundColor: '#1e1e2e',
+                border: '2px solid red'
+              }}
+            >
+              <div className="p-6 border-b border-catppuccin-surface0 flex items-center justify-between">
+                <h2 className="text-xl font-semibold text-catppuccin-text">Scan Karşılaştırma</h2>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    console.log('Close button clicked');
+                    setShowComparison(false);
+                    setComparisonData(null);
+                    setSelectedScan1('');
+                    setSelectedScan2('');
+                  }}
+                  className="text-catppuccin-overlay1 hover:text-catppuccin-text cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="p-6 overflow-y-auto flex-1">
+                {/* Scan Selection */}
+                <div className="mb-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-catppuccin-text mb-2">
+                      Scan 1 (İlk Scan / Eski)
+                    </label>
+                    <select
+                      value={selectedScan1}
+                      onChange={(e) => setSelectedScan1(e.target.value)}
+                      className="w-full px-3 py-2 bg-catppuccin-mantle border border-catppuccin-surface0 rounded text-catppuccin-text"
+                    >
+                      <option value="">Scan seçin...</option>
+                      {(projectDetails?.images.flatMap(img => img.scans) || allScans).map((scan) => (
+                        <option key={scan.filename} value={scan.filename}>
+                          {scan.artifactName || 
+                           (scan.imageName 
+                             ? `${scan.imageName}${scan.tag ? ':' + scan.tag : ''}` 
+                             : scan.filename)} - {new Date(scan.modifiedAt).toLocaleString()}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-catppuccin-text mb-2">
+                      Scan 2 (İkinci Scan / Yeni)
+                    </label>
+                    <select
+                      value={selectedScan2}
+                      onChange={(e) => setSelectedScan2(e.target.value)}
+                      className="w-full px-3 py-2 bg-catppuccin-mantle border border-catppuccin-surface0 rounded text-catppuccin-text"
+                    >
+                      <option value="">Scan seçin...</option>
+                      {(projectDetails?.images.flatMap(img => img.scans) || allScans)
+                        .filter(scan => scan.filename !== selectedScan1)
+                        .map((scan) => (
+                        <option key={scan.filename} value={scan.filename}>
+                          {scan.artifactName || 
+                           (scan.imageName 
+                             ? `${scan.imageName}${scan.tag ? ':' + scan.tag : ''}` 
+                             : scan.filename)} - {new Date(scan.modifiedAt).toLocaleString()}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <button
+                    onClick={compareScans}
+                    disabled={!selectedScan1 || !selectedScan2 || comparisonLoading}
+                    className="w-full px-4 py-2 bg-catppuccin-blue text-catppuccin-base rounded hover:bg-catppuccin-sapphire disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {comparisonLoading ? 'Karşılaştırılıyor...' : 'Karşılaştır'}
+                  </button>
+                </div>
+
+                {/* Comparison Results */}
+                {comparisonData && (
+                  <div>
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-4 gap-4 mb-6">
+                      <div className="bg-catppuccin-green/20 border border-catppuccin-green/30 rounded-lg p-4">
+                        <div className="text-2xl font-bold text-catppuccin-green">+{comparisonData.summary.added}</div>
+                        <div className="text-xs text-catppuccin-overlay1 mt-1">Yeni Eklenen</div>
+                      </div>
+                      <div className="bg-catppuccin-red/20 border border-catppuccin-red/30 rounded-lg p-4">
+                        <div className="text-2xl font-bold text-catppuccin-red">-{comparisonData.summary.removed}</div>
+                        <div className="text-xs text-catppuccin-overlay1 mt-1">Kapatılan</div>
+                      </div>
+                      <div className="bg-catppuccin-yellow/20 border border-catppuccin-yellow/30 rounded-lg p-4">
+                        <div className="text-2xl font-bold text-catppuccin-yellow">~{comparisonData.summary.changed}</div>
+                        <div className="text-xs text-catppuccin-overlay1 mt-1">Değişen</div>
+                      </div>
+                      <div className="bg-catppuccin-surface0 border border-catppuccin-surface1 rounded-lg p-4">
+                        <div className="text-2xl font-bold text-catppuccin-text">={comparisonData.summary.unchanged}</div>
+                        <div className="text-xs text-catppuccin-overlay1 mt-1">Değişmeyen</div>
+                      </div>
+                    </div>
+
+                    {/* Scan Info */}
+                    <div className="grid grid-cols-2 gap-4 mb-6">
+                      <div className="border border-catppuccin-surface0 rounded-lg p-4">
+                        <div className="text-sm font-semibold text-catppuccin-text mb-1">Scan 1</div>
+                        <div className="text-xs text-catppuccin-overlay1">{comparisonData.scan1.artifactName}</div>
+                        <div className="text-xs text-catppuccin-overlay1">{new Date(comparisonData.scan1.scanDate).toLocaleString()}</div>
+                        <div className="text-sm text-catppuccin-text mt-2">Toplam: {comparisonData.scan1.totalVulns}</div>
+                      </div>
+                      <div className="border border-catppuccin-surface0 rounded-lg p-4">
+                        <div className="text-sm font-semibold text-catppuccin-text mb-1">Scan 2</div>
+                        <div className="text-xs text-catppuccin-overlay1">{comparisonData.scan2.artifactName}</div>
+                        <div className="text-xs text-catppuccin-overlay1">{new Date(comparisonData.scan2.scanDate).toLocaleString()}</div>
+                        <div className="text-sm text-catppuccin-text mt-2">Toplam: {comparisonData.scan2.totalVulns}</div>
+                      </div>
+                    </div>
+
+                    {/* Tabs */}
+                    <div className="border-b border-catppuccin-surface0 mb-4">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setComparisonTab('summary')}
+                          className={`px-4 py-2 text-sm font-medium ${
+                            comparisonTab === 'summary'
+                              ? 'text-catppuccin-blue border-b-2 border-catppuccin-blue'
+                              : 'text-catppuccin-overlay1 hover:text-catppuccin-text'
+                          }`}
+                        >
+                          Özet
+                        </button>
+                        <button
+                          onClick={() => setComparisonTab('added')}
+                          className={`px-4 py-2 text-sm font-medium ${
+                            comparisonTab === 'added'
+                              ? 'text-catppuccin-blue border-b-2 border-catppuccin-blue'
+                              : 'text-catppuccin-overlay1 hover:text-catppuccin-text'
+                          }`}
+                        >
+                          Yeni Eklenen ({comparisonData.summary.added})
+                        </button>
+                        <button
+                          onClick={() => setComparisonTab('removed')}
+                          className={`px-4 py-2 text-sm font-medium ${
+                            comparisonTab === 'removed'
+                              ? 'text-catppuccin-blue border-b-2 border-catppuccin-blue'
+                              : 'text-catppuccin-overlay1 hover:text-catppuccin-text'
+                          }`}
+                        >
+                          Kapatılan ({comparisonData.summary.removed})
+                        </button>
+                        <button
+                          onClick={() => setComparisonTab('changed')}
+                          className={`px-4 py-2 text-sm font-medium ${
+                            comparisonTab === 'changed'
+                              ? 'text-catppuccin-blue border-b-2 border-catppuccin-blue'
+                              : 'text-catppuccin-overlay1 hover:text-catppuccin-text'
+                          }`}
+                        >
+                          Değişen ({comparisonData.summary.changed})
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Tab Content - Diff/Meld Style View */}
+                    <div className="max-h-96 overflow-y-auto">
+                      {comparisonTab === 'summary' && comparisonData && (
+                        <div className="grid grid-cols-2 gap-4">
+                          {/* Left: Scan 1 (Removed - Red) */}
+                          <div className="border border-catppuccin-red/30 rounded-lg p-4 bg-catppuccin-red/5">
+                            <div className="text-sm font-semibold text-catppuccin-red mb-3">
+                              Scan 1 - Kaldırılanlar ({comparisonData.summary.removed})
+                            </div>
+                            <div className="space-y-2 max-h-80 overflow-y-auto">
+                              {comparisonData.removed.map((vuln, idx) => (
+                                <div key={idx} className="bg-catppuccin-red/10 border-l-4 border-catppuccin-red p-2 rounded">
+                                  <div className="text-xs font-mono text-catppuccin-teal">{vuln.VulnerabilityID}</div>
+                                  <div className="text-xs text-catppuccin-text mt-1">{vuln.Title || vuln.VulnerabilityID}</div>
+                                  <div className="text-xs text-catppuccin-overlay1 mt-1">
+                                    {vuln.PkgName} {vuln.InstalledVersion}
+                                  </div>
+                                </div>
+                              ))}
+                              {comparisonData.removed.length === 0 && (
+                                <div className="text-xs text-catppuccin-overlay1 text-center py-4">Kaldırılan vulnerability yok</div>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Right: Scan 2 (Added - Green) */}
+                          <div className="border border-catppuccin-green/30 rounded-lg p-4 bg-catppuccin-green/5">
+                            <div className="text-sm font-semibold text-catppuccin-green mb-3">
+                              Scan 2 - Yeni Eklenenler ({comparisonData.summary.added})
+                            </div>
+                            <div className="space-y-2 max-h-80 overflow-y-auto">
+                              {comparisonData.added.map((vuln, idx) => (
+                                <div key={idx} className="bg-catppuccin-green/10 border-l-4 border-catppuccin-green p-2 rounded">
+                                  <div className="text-xs font-mono text-catppuccin-teal">{vuln.VulnerabilityID}</div>
+                                  <div className="text-xs text-catppuccin-text mt-1">{vuln.Title || vuln.VulnerabilityID}</div>
+                                  <div className="text-xs text-catppuccin-overlay1 mt-1">
+                                    {vuln.PkgName} {vuln.InstalledVersion}
+                                  </div>
+                                </div>
+                              ))}
+                              {comparisonData.added.length === 0 && (
+                                <div className="text-xs text-catppuccin-overlay1 text-center py-4">Yeni eklenen vulnerability yok</div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {comparisonTab === 'added' && (
+                        <div className="space-y-2">
+                          {comparisonData.added.map((vuln, idx) => (
+                            <div key={idx} className="border border-catppuccin-surface0 rounded p-3 bg-catppuccin-mantle/60">
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <span className="font-mono text-xs text-catppuccin-teal">{vuln.VulnerabilityID}</span>
+                                  <span className={`ml-2 text-xs font-semibold ${
+                                    vuln.Severity === 'CRITICAL' ? 'text-catppuccin-red' :
+                                    vuln.Severity === 'HIGH' ? 'text-catppuccin-peach' :
+                                    vuln.Severity === 'MEDIUM' ? 'text-catppuccin-yellow' :
+                                    'text-catppuccin-blue'
+                                  }`}>{vuln.Severity}</span>
+                                </div>
+                                {vuln.PrimaryURL && (
+                                  <a href={vuln.PrimaryURL} target="_blank" rel="noopener noreferrer" className="text-xs text-catppuccin-blue hover:underline">
+                                    Detay →
+                                  </a>
+                                )}
+                              </div>
+                              <h4 className="text-sm font-semibold text-catppuccin-text mt-1">{vuln.Title || vuln.VulnerabilityID}</h4>
+                              <div className="text-xs text-catppuccin-overlay1 mt-1">
+                                {vuln.PkgName} {vuln.InstalledVersion}
+                                {vuln.FixedVersion && ` → ${vuln.FixedVersion}`}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {comparisonTab === 'removed' && (
+                        <div className="space-y-2">
+                          {comparisonData.removed.map((vuln, idx) => (
+                            <div key={idx} className="border border-catppuccin-surface0 rounded p-3 bg-catppuccin-mantle/60">
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <span className="font-mono text-xs text-catppuccin-teal">{vuln.VulnerabilityID}</span>
+                                  <span className={`ml-2 text-xs font-semibold ${
+                                    vuln.Severity === 'CRITICAL' ? 'text-catppuccin-red' :
+                                    vuln.Severity === 'HIGH' ? 'text-catppuccin-peach' :
+                                    vuln.Severity === 'MEDIUM' ? 'text-catppuccin-yellow' :
+                                    'text-catppuccin-blue'
+                                  }`}>{vuln.Severity}</span>
+                                </div>
+                                {vuln.PrimaryURL && (
+                                  <a href={vuln.PrimaryURL} target="_blank" rel="noopener noreferrer" className="text-xs text-catppuccin-blue hover:underline">
+                                    Detay →
+                                  </a>
+                                )}
+                              </div>
+                              <h4 className="text-sm font-semibold text-catppuccin-text mt-1">{vuln.Title || vuln.VulnerabilityID}</h4>
+                              <div className="text-xs text-catppuccin-overlay1 mt-1">
+                                {vuln.PkgName} {vuln.InstalledVersion}
+                                {vuln.FixedVersion && ` → ${vuln.FixedVersion}`}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {comparisonTab === 'changed' && (
+                        <div className="space-y-2">
+                          {comparisonData.changed.map((vuln, idx) => (
+                            <div key={idx} className="border border-catppuccin-surface0 rounded p-3 bg-catppuccin-mantle/60">
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <span className="font-mono text-xs text-catppuccin-teal">{vuln.VulnerabilityID}</span>
+                                  <span className={`ml-2 text-xs font-semibold ${
+                                    vuln.current.Severity === 'CRITICAL' ? 'text-catppuccin-red' :
+                                    vuln.current.Severity === 'HIGH' ? 'text-catppuccin-peach' :
+                                    vuln.current.Severity === 'MEDIUM' ? 'text-catppuccin-yellow' :
+                                    'text-catppuccin-blue'
+                                  }`}>{vuln.current.Severity}</span>
+                                </div>
+                                {vuln.current.PrimaryURL && (
+                                  <a href={vuln.current.PrimaryURL} target="_blank" rel="noopener noreferrer" className="text-xs text-catppuccin-blue hover:underline">
+                                    Detay →
+                                  </a>
+                                )}
+                              </div>
+                              <h4 className="text-sm font-semibold text-catppuccin-text mt-1">{vuln.current.Title || vuln.VulnerabilityID}</h4>
+                              <div className="text-xs text-catppuccin-overlay1 mt-1">
+                                {vuln.PkgName} {vuln.InstalledVersion}
+                              </div>
+                              <div className="mt-2 space-y-1">
+                                {Object.entries(vuln.changes).map(([field, change]) => (
+                                  <div key={field} className="text-xs">
+                                    <span className="text-catppuccin-overlay1">{field}:</span>{' '}
+                                    <span className="text-catppuccin-red line-through">{change.old || '(boş)'}</span>{' '}
+                                    →{' '}
+                                    <span className="text-catppuccin-green">{change.new || '(boş)'}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {comparisonTab === 'summary' && (
+                        <div className="text-center py-8 text-catppuccin-overlay1">
+                          Yukarıdaki özet kartlarından detaylı bilgilere ulaşabilirsiniz.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>,
+        document.body
+      )}
     </div>
   );
 }
