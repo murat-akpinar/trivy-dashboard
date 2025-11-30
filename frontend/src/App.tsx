@@ -88,7 +88,7 @@ type ComparisonResult = {
 const API_BASE =
   import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:8180' : '');
 
-type Page = 'dashboard' | 'projects' | 'project-detail';
+type Page = 'dashboard' | 'projects' | 'project-detail' | 'project-comparison' | 'not-found';
 
 // Calculate grade based on severity counts
 function calculateGrade(severityCount: Record<string, number>): { grade: string; color: string } {
@@ -170,6 +170,7 @@ function App() {
   const [selectedScan1, setSelectedScan1] = useState<string>('');
   const [selectedScan2, setSelectedScan2] = useState<string>('');
   const [comparisonLoading, setComparisonLoading] = useState(false);
+  const [comparisonError, setComparisonError] = useState<string | null>(null);
   const [comparisonTab, setComparisonTab] = useState<'summary' | 'added' | 'removed' | 'changed'>('summary');
 
 
@@ -255,18 +256,35 @@ function App() {
   const compareScans = async () => {
     if (!selectedScan1 || !selectedScan2 || !API_BASE) return;
     setComparisonLoading(true);
+    setComparisonError(null);
+    setComparisonData(null);
     try {
       const response = await fetch(
         `${API_BASE}/api/compare?scan1=${encodeURIComponent(selectedScan1)}&scan2=${encodeURIComponent(selectedScan2)}`
       );
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        const errorText = await response.text().catch(() => '');
+        throw new Error(`API hatası (${response.status}): ${errorText || 'Sunucu hatası'}`);
       }
       const data: ComparisonResult = await response.json();
+      
+      // Validate response structure
+      if (!data || !data.scan1 || !data.scan2 || !data.summary) {
+        throw new Error('Geçersiz API yanıtı');
+      }
+      
+      // Ensure arrays exist (for 0 vulnerability cases)
+      if (!data.added) data.added = [];
+      if (!data.removed) data.removed = [];
+      if (!data.changed) data.changed = [];
+      
       setComparisonData(data);
       setComparisonTab('summary');
+      setComparisonError(null);
     } catch (error) {
       console.error('Comparison failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Bilinmeyen bir hata oluştu';
+      setComparisonError(errorMessage);
       setComparisonData(null);
     } finally {
       setComparisonLoading(false);
@@ -621,7 +639,11 @@ function App() {
                 </label>
                 <select
                   value={selectedScan1}
-                  onChange={(e) => setSelectedScan1(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedScan1(e.target.value);
+                    setComparisonError(null);
+                    setComparisonData(null);
+                  }}
                   className="w-full px-3 py-2 bg-catppuccin-base border border-catppuccin-surface0 rounded text-catppuccin-text"
                 >
                   <option value="">Scan seçin...</option>
@@ -641,7 +663,11 @@ function App() {
                 </label>
                 <select
                   value={selectedScan2}
-                  onChange={(e) => setSelectedScan2(e.target.value)}
+                  onChange={(e) => {
+                    setSelectedScan2(e.target.value);
+                    setComparisonError(null);
+                    setComparisonData(null);
+                  }}
                   className="w-full px-3 py-2 bg-catppuccin-base border border-catppuccin-surface0 rounded text-catppuccin-text"
                 >
                   <option value="">Scan seçin...</option>
@@ -664,6 +690,12 @@ function App() {
               >
                 {comparisonLoading ? 'Karşılaştırılıyor...' : 'Karşılaştır'}
               </button>
+              {comparisonError && (
+                <div className="mt-4 p-4 bg-catppuccin-red/20 border border-catppuccin-red/30 rounded-lg">
+                  <p className="text-sm text-catppuccin-red font-medium">Hata:</p>
+                  <p className="text-xs text-catppuccin-red/80 mt-1">{comparisonError}</p>
+                </div>
+              )}
             </div>
           </section>
 
@@ -703,7 +735,7 @@ function App() {
                       {comparisonData.scan1.artifactName} - {new Date(comparisonData.scan1.scanDate).toLocaleString()}
                     </div>
                     <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {comparisonData.removed.map((vuln, idx) => (
+                      {(comparisonData.removed || []).map((vuln, idx) => (
                         <div key={idx} className="bg-catppuccin-red/10 border-l-4 border-catppuccin-red p-2 rounded">
                           <div className="text-xs font-mono text-catppuccin-teal">{vuln.VulnerabilityID}</div>
                           <div className="text-xs text-catppuccin-text mt-1">{vuln.Title || vuln.VulnerabilityID}</div>
@@ -712,7 +744,7 @@ function App() {
                           </div>
                         </div>
                       ))}
-                      {comparisonData.removed.length === 0 && (
+                      {(!comparisonData.removed || comparisonData.removed.length === 0) && (
                         <div className="text-xs text-catppuccin-overlay1 text-center py-4">Kaldırılan vulnerability yok</div>
                       )}
                     </div>
@@ -727,7 +759,7 @@ function App() {
                       {comparisonData.scan2.artifactName} - {new Date(comparisonData.scan2.scanDate).toLocaleString()}
                     </div>
                     <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {comparisonData.added.map((vuln, idx) => (
+                      {(comparisonData.added || []).map((vuln, idx) => (
                         <div key={idx} className="bg-catppuccin-green/10 border-l-4 border-catppuccin-green p-2 rounded">
                           <div className="text-xs font-mono text-catppuccin-teal">{vuln.VulnerabilityID}</div>
                           <div className="text-xs text-catppuccin-text mt-1">{vuln.Title || vuln.VulnerabilityID}</div>
@@ -736,7 +768,7 @@ function App() {
                           </div>
                         </div>
                       ))}
-                      {comparisonData.added.length === 0 && (
+                      {(!comparisonData.added || comparisonData.added.length === 0) && (
                         <div className="text-xs text-catppuccin-overlay1 text-center py-4">Yeni eklenen vulnerability yok</div>
                       )}
                     </div>
@@ -818,7 +850,21 @@ function App() {
                 </span>
               </div>
             </div>
-            <span className="text-xs text-catppuccin-overlay1">Prototype UI</span>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => {
+                  setCurrentPage('project-comparison');
+                  setSelectedScan1('');
+                  setSelectedScan2('');
+                  setComparisonData(null);
+                  setComparisonError(null);
+                }}
+                className="px-4 py-2 rounded-lg border border-catppuccin-blue bg-catppuccin-blue/10 hover:bg-catppuccin-blue/20 text-catppuccin-blue font-medium transition-colors"
+              >
+                Karşılaştırma
+              </button>
+              <span className="text-xs text-catppuccin-overlay1">Prototype UI</span>
+            </div>
           </div>
         </header>
 
@@ -1098,12 +1144,11 @@ function App() {
                                             onClick={(e) => {
                                               e.preventDefault();
                                               e.stopPropagation();
-                                              console.log('Compare button clicked', scan.filename);
                                               setSelectedScan1(scan.filename);
                                               setSelectedScan2('');
                                               setComparisonData(null);
-                                              setShowComparisonPage(true);
-                                              setSelectedProject(null);
+                                              setComparisonError(null);
+                                              setCurrentPage('project-comparison');
                                             }}
                                             className="text-xs text-catppuccin-blue hover:text-catppuccin-sapphire mt-1 underline cursor-pointer relative z-10 bg-transparent border-none p-0"
                                             style={{ position: 'relative', zIndex: 10 }}
@@ -1234,6 +1279,247 @@ function App() {
               </div>
             )}
           </section>
+        </main>
+      </div>
+    );
+  }
+
+  // Project Comparison Page
+  if (currentPage === 'project-comparison') {
+    if (!selectedProject || !projectDetails) {
+      return (
+        <div className="min-h-screen bg-catppuccin-base text-catppuccin-text">
+          <header className="border-b border-catppuccin-surface0 bg-catppuccin-mantle/70 backdrop-blur">
+            <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    setCurrentPage('dashboard');
+                    setSelectedProject(null);
+                    setProjectDetails(null);
+                  }}
+                  className="px-3 py-1.5 rounded border border-catppuccin-surface1 hover:bg-catppuccin-surface0 hover:border-catppuccin-teal text-catppuccin-text transition-colors font-medium"
+                >
+                  ← Ana Sayfa
+                </button>
+              </div>
+            </div>
+          </header>
+          <main className="mx-auto max-w-5xl px-4 py-6">
+            <div className="flex items-center justify-center h-64">
+              <p className="text-catppuccin-overlay1">Proje seçilmedi veya yükleniyor...</p>
+            </div>
+          </main>
+        </div>
+      );
+    }
+
+    // Filter scans for selected project only
+    const projectScans = allScans.filter((scan) => scan.projectName === selectedProject);
+
+    return (
+      <div className="min-h-screen bg-catppuccin-base text-catppuccin-text">
+        <header className="border-b border-catppuccin-surface0 bg-catppuccin-mantle/70 backdrop-blur">
+          <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-sm">
+                <button
+                  onClick={() => {
+                    setCurrentPage('dashboard');
+                    setSelectedProject(null);
+                    setProjectDetails(null);
+                    setShowComparisonPage(false);
+                    setComparisonData(null);
+                    setSelectedScan1('');
+                    setSelectedScan2('');
+                  }}
+                  className="px-3 py-1.5 rounded border border-catppuccin-surface1 hover:bg-catppuccin-surface0 hover:border-catppuccin-teal text-catppuccin-text transition-colors font-medium"
+                >
+                  Ana Sayfa
+                </button>
+                <span className="text-catppuccin-overlay1">/</span>
+                <button
+                  onClick={() => {
+                    setCurrentPage('projects');
+                    setSelectedProject(null);
+                    setProjectDetails(null);
+                  }}
+                  className="px-3 py-1.5 rounded border border-catppuccin-surface1 hover:bg-catppuccin-surface0 hover:border-catppuccin-teal text-catppuccin-text transition-colors font-medium"
+                >
+                  Projeler
+                </button>
+                <span className="text-catppuccin-overlay1">/</span>
+                <button
+                  onClick={() => {
+                    setCurrentPage('project-detail');
+                    setComparisonData(null);
+                    setSelectedScan1('');
+                    setSelectedScan2('');
+                    setComparisonError(null);
+                  }}
+                  className="px-3 py-1.5 rounded border border-catppuccin-surface1 hover:bg-catppuccin-surface0 hover:border-catppuccin-teal text-catppuccin-text transition-colors font-medium"
+                >
+                  {projectDetails.projectName}
+                </button>
+                <span className="text-catppuccin-overlay1">/</span>
+                <span className="px-3 py-1.5 rounded bg-catppuccin-teal/10 text-catppuccin-teal font-semibold">
+                  Karşılaştırma
+                </span>
+              </div>
+            </div>
+            <span className="text-xs text-catppuccin-overlay1">Prototype UI</span>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-6xl px-4 py-6 space-y-6">
+          {/* Scan Selection */}
+          <section className="bg-catppuccin-mantle/60 border border-catppuccin-surface0 rounded-xl p-6">
+            <h2 className="text-xl font-semibold text-catppuccin-text mb-4">Tarama Seçimi - {projectDetails.projectName}</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-catppuccin-text mb-2">
+                  Scan 1 (İlk Scan / Eski)
+                </label>
+                <select
+                  value={selectedScan1}
+                  onChange={(e) => {
+                    setSelectedScan1(e.target.value);
+                    setComparisonError(null);
+                    setComparisonData(null);
+                  }}
+                  className="w-full px-3 py-2 bg-catppuccin-base border border-catppuccin-surface0 rounded text-catppuccin-text"
+                >
+                  <option value="">Scan seçin...</option>
+                  {projectScans.map((scan) => (
+                    <option key={scan.filename} value={scan.filename}>
+                      {scan.artifactName || 
+                       (scan.imageName 
+                         ? `${scan.imageName}${scan.tag ? ':' + scan.tag : ''}` 
+                         : scan.filename)} - {new Date(scan.modifiedAt).toLocaleString()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-catppuccin-text mb-2">
+                  Scan 2 (İkinci Scan / Yeni)
+                </label>
+                <select
+                  value={selectedScan2}
+                  onChange={(e) => {
+                    setSelectedScan2(e.target.value);
+                    setComparisonError(null);
+                    setComparisonData(null);
+                  }}
+                  className="w-full px-3 py-2 bg-catppuccin-base border border-catppuccin-surface0 rounded text-catppuccin-text"
+                >
+                  <option value="">Scan seçin...</option>
+                  {projectScans
+                    .filter(scan => scan.filename !== selectedScan1)
+                    .map((scan) => (
+                    <option key={scan.filename} value={scan.filename}>
+                      {scan.artifactName || 
+                       (scan.imageName 
+                         ? `${scan.imageName}${scan.tag ? ':' + scan.tag : ''}` 
+                         : scan.filename)} - {new Date(scan.modifiedAt).toLocaleString()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button
+                onClick={compareScans}
+                disabled={!selectedScan1 || !selectedScan2 || comparisonLoading}
+                className="w-full px-4 py-2 bg-catppuccin-blue text-catppuccin-base rounded hover:bg-catppuccin-sapphire disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+              >
+                {comparisonLoading ? 'Karşılaştırılıyor...' : 'Karşılaştır'}
+              </button>
+              {comparisonError && (
+                <div className="mt-4 p-4 bg-catppuccin-red/20 border border-catppuccin-red/30 rounded-lg">
+                  <p className="text-sm text-catppuccin-red font-medium">Hata:</p>
+                  <p className="text-xs text-catppuccin-red/80 mt-1">{comparisonError}</p>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Comparison Results */}
+          {comparisonData && (
+            <section className="space-y-6">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-4 gap-4">
+                <div className="bg-catppuccin-green/20 border border-catppuccin-green/30 rounded-lg p-4">
+                  <div className="text-2xl font-bold text-catppuccin-green">+{comparisonData.summary.added}</div>
+                  <div className="text-xs text-catppuccin-overlay1 mt-1">Yeni Eklenen</div>
+                </div>
+                <div className="bg-catppuccin-red/20 border border-catppuccin-red/30 rounded-lg p-4">
+                  <div className="text-2xl font-bold text-catppuccin-red">-{comparisonData.summary.removed}</div>
+                  <div className="text-xs text-catppuccin-overlay1 mt-1">Kapatılan</div>
+                </div>
+                <div className="bg-catppuccin-yellow/20 border border-catppuccin-yellow/30 rounded-lg p-4">
+                  <div className="text-2xl font-bold text-catppuccin-yellow">~{comparisonData.summary.changed}</div>
+                  <div className="text-xs text-catppuccin-overlay1 mt-1">Değişen</div>
+                </div>
+                <div className="bg-catppuccin-surface0 border border-catppuccin-surface1 rounded-lg p-4">
+                  <div className="text-2xl font-bold text-catppuccin-text">={comparisonData.summary.unchanged}</div>
+                  <div className="text-xs text-catppuccin-overlay1 mt-1">Değişmeyen</div>
+                </div>
+              </div>
+
+              {/* Diff/Meld Style View - Sağ Sol Karşılaştırma */}
+              <div className="bg-catppuccin-mantle/60 border border-catppuccin-surface0 rounded-xl p-6">
+                <h2 className="text-xl font-semibold text-catppuccin-text mb-4">Karşılaştırma Detayları (Diff/Meld Görünümü)</h2>
+                <div className="grid grid-cols-2 gap-4">
+                  {/* Left: Scan 1 (Removed - Red) */}
+                  <div className="border border-catppuccin-red/30 rounded-lg p-4 bg-catppuccin-red/5">
+                    <div className="text-sm font-semibold text-catppuccin-red mb-3">
+                      Scan 1 - Kaldırılanlar ({comparisonData.summary.removed})
+                    </div>
+                    <div className="text-xs text-catppuccin-overlay1 mb-2">
+                      {comparisonData.scan1.artifactName} - {new Date(comparisonData.scan1.scanDate).toLocaleString()}
+                    </div>
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {(comparisonData.removed || []).map((vuln, idx) => (
+                        <div key={idx} className="bg-catppuccin-red/10 border-l-4 border-catppuccin-red p-2 rounded">
+                          <div className="text-xs font-mono text-catppuccin-teal">{vuln.VulnerabilityID}</div>
+                          <div className="text-xs text-catppuccin-text mt-1">{vuln.Title || vuln.VulnerabilityID}</div>
+                          <div className="text-xs text-catppuccin-overlay1 mt-1">
+                            {vuln.PkgName} {vuln.InstalledVersion}
+                          </div>
+                        </div>
+                      ))}
+                      {(!comparisonData.removed || comparisonData.removed.length === 0) && (
+                        <div className="text-xs text-catppuccin-overlay1 text-center py-4">Kaldırılan vulnerability yok</div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right: Scan 2 (Added - Green) */}
+                  <div className="border border-catppuccin-green/30 rounded-lg p-4 bg-catppuccin-green/5">
+                    <div className="text-sm font-semibold text-catppuccin-green mb-3">
+                      Scan 2 - Yeni Eklenenler ({comparisonData.summary.added})
+                    </div>
+                    <div className="text-xs text-catppuccin-overlay1 mb-2">
+                      {comparisonData.scan2.artifactName} - {new Date(comparisonData.scan2.scanDate).toLocaleString()}
+                    </div>
+                    <div className="space-y-2 max-h-96 overflow-y-auto">
+                      {(comparisonData.added || []).map((vuln, idx) => (
+                        <div key={idx} className="bg-catppuccin-green/10 border-l-4 border-catppuccin-green p-2 rounded">
+                          <div className="text-xs font-mono text-catppuccin-teal">{vuln.VulnerabilityID}</div>
+                          <div className="text-xs text-catppuccin-text mt-1">{vuln.Title || vuln.VulnerabilityID}</div>
+                          <div className="text-xs text-catppuccin-overlay1 mt-1">
+                            {vuln.PkgName} {vuln.InstalledVersion}
+                          </div>
+                        </div>
+                      ))}
+                      {(!comparisonData.added || comparisonData.added.length === 0) && (
+                        <div className="text-xs text-catppuccin-overlay1 text-center py-4">Yeni eklenen vulnerability yok</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
         </main>
       </div>
     );
@@ -1382,6 +1668,53 @@ function App() {
               </div>
             )}
           </section>
+        </main>
+      </div>
+    );
+  }
+
+  // 404 Not Found page
+  if (currentPage === 'not-found') {
+    return (
+      <div className="min-h-screen bg-catppuccin-base text-catppuccin-text">
+        <header className="border-b border-catppuccin-surface0 bg-catppuccin-mantle/70 backdrop-blur">
+          <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setCurrentPage('dashboard')}
+                className="px-3 py-1.5 rounded border border-catppuccin-surface1 hover:bg-catppuccin-surface0 hover:border-catppuccin-teal text-catppuccin-text transition-colors font-medium"
+              >
+                ← Ana Sayfa
+              </button>
+            </div>
+            <span className="text-xs text-catppuccin-overlay1">Prototype UI</span>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-5xl px-4 py-6">
+          <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6">
+            <div className="text-9xl font-bold text-catppuccin-overlay1">404</div>
+            <div className="space-y-2">
+              <h1 className="text-3xl font-semibold text-catppuccin-text">Sayfa Bulunamadı</h1>
+              <p className="text-catppuccin-overlay1">
+                Aradığınız sayfa mevcut değil veya taşınmış olabilir.
+              </p>
+            </div>
+            <div className="flex gap-4 mt-6">
+              <button
+                onClick={() => setCurrentPage('dashboard')}
+                className="px-6 py-3 rounded-lg border border-catppuccin-blue bg-catppuccin-blue/10 hover:bg-catppuccin-blue/20 text-catppuccin-blue font-medium transition-colors"
+              >
+                Ana Sayfaya Dön
+              </button>
+              <button
+                onClick={() => setCurrentPage('projects')}
+                className="px-6 py-3 rounded-lg border border-catppuccin-surface1 hover:bg-catppuccin-surface0 text-catppuccin-text font-medium transition-colors"
+              >
+                Projeleri Görüntüle
+              </button>
+            </div>
+          </div>
         </main>
       </div>
     );
